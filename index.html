@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garagem Inteligente</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="container">
+        <h1>Garagem Inteligente</h1>
+        <p id="selecione">Selecione:</p>
+
+        <div id="veiculo-selection">
+            <button data-veiculo="carro">Carro Casual</button>
+            <button data-veiculo="esportivo">Carro Esportivo</button>
+            <button data-veiculo="caminhao">Caminhão</button>
+            <button data-veiculo="moto">Moto</button>
+            <button data-veiculo="bicicleta">Bicicleta</button>
+        </div>
+
+        <div id="carro-container" class="veiculo-container" style="display: none;">
+            <h2>Carro Casual</h2>
+            <img src="imagens/carro.png" alt="Imagem do Carro" width="200">
+            <p><strong>Modelo:</strong> <span id="carro-modelo">Sedan</span></p>
+            <p><strong>Cor:</strong> <span id="carro-cor">Prata</span></p>
+            <p><strong>Status:</strong> <span id="carro-status">Desligado</span></p>
+            <p><strong>Velocidade:</strong> <span id="carro-velocidade">0</span> km/h</p>
+            <button data-acao="ligar" data-tipo="carro">Ligar</button>
+            <button data-acao="desligar" data-tipo="carro">Desligar</button>
+            <button data-acao="acelerar" data-tipo="carro">Acelerar</button>
+            <button data-acao="frear" data-tipo="carro">Frear</button>
+            <button data-acao="buzinar" data-tipo="carro">Buzinar</button>
+        </div>
+
+        <div id="esportivo-container" class="veiculo-container" style="display: none;">
+            <h2>Carro Esportivo</h2>
+            <img src="imagens/cesportivo.png" alt="Imagem do Carro Esportivo" width="200">
+            <p><strong>Modelo:</strong> <span id="esportivo-modelo">Ferrari</span></p>
+            <p><strong>Cor:</strong> <span id="esportivo-cor">Vermelha</span></p>
+            <p><strong>Status:</strong> <span id="esportivo-status">Desligado</span></p>
+            <p><strong>Velocidade:</strong> <span id="esportivo-velocidade">0</span> km/h</p>
+            <p><strong>Turbo:</strong> <span id="esportivo-turbo">Desativado</span></p>
+            <button data-acao="ligar" data-tipo="esportivo">Ligar</button>
+            <button data-acao="desligar" data-tipo="esportivo">Desligar</button>
+            <button data-acao="acelerar" data-tipo="esportivo">Acelerar</button>
+            <button data-acao="frear" data-tipo="esportivo">Frear</button>
+            <button data-acao="buzinar" data-tipo="esportivo">Buzinar</button>
+            <button data-acao="ativarTurbo" data-tipo="esportivo">Ativar Turbo</button>
+            <button data-acao="desativarTurbo" data-tipo="esportivo">Desativar Turbo</button>
+        </div>
+
+        <div id="caminhao-container" class="veiculo-container" style="display: none;">
+            <h2>Caminhão</h2>
+            <img src="imagens/caminhao.png" alt="Imagem do Caminhão" width="200">
+            <p><strong>Modelo:</strong> <span id="caminhao-modelo">Volvo</span></p>
+            <p><strong>Cor:</strong> <span id="caminhao-cor">Branco</span></p>
+            <p><strong>Status:</strong> <span id="caminhao-status">Desligado</span></p>
+            <p><strong>Velocidade:</strong> <span id="caminhao-velocidade">0</span> km/h</p>
+            <p><strong>Carga Atual:</strong> <span id="caminhao-carga">0</span> kg</p>
+            <p><strong>Capacidade Máxima:</strong> <span id="caminhao-capacidade">5000</span> kg</p>
+            <button data-acao="ligar" data-tipo="caminhao">Ligar</button>
+            <button data-acao="desligar" data-tipo="caminhao">Desligar</button>
+            <button data-acao="acelerar" data-tipo="caminhao">Acelerar</button>
+            <button data-acao="frear" data-tipo="caminhao">Frear</button>
+            <button data-acao="buzinar" data-tipo="caminhao">Buzinar</button>
+            <label for="carga">Carga (kg):</label>
+            <input type="number" id="carga" data-tipo="caminhao">
+            <button data-acao="carregar" data-tipo="caminhao">Carregar</button>
+        </div>
+
+        <div id="moto-container" class="veiculo-container" style="display: none;">
+            <h2>Moto</h2>
+            <img src="imagens/moto.jpg" alt="Imagem da Moto" width="200">
+            <p><strong>Modelo:</strong> <span id="moto-modelo">Harley Davidson</span></p>
+            <p><strong>Cor:</strong> <span id="moto-cor">Preto</span></p>
+            <p><strong>Status:</strong> <span id="moto-status">Desligado</span></p>
+            <p><strong>Velocidade:</strong> <span id="moto-velocidade">0</span> km/h</p>
+            <button data-acao="ligar" data-tipo="moto">Ligar</button>
+            <button data-acao="desligar" data-tipo="moto">Desligar</button>
+            <button data-acao="acelerar" data-tipo="moto">Acelerar</button>
+            <button data-acao="frear" data-tipo="moto">Frear</button>
+            <button data-acao="buzinar" data-tipo="moto">Buzinar</button>
+        </div>
+
+         <div id="bicicleta-container" class="veiculo-container" style="display: none;">
+            <h2>Bicicleta</h2>
+            <img src="imagens/bike.avif" alt="Imagem da Bicicleta" width="200">
+            <p><strong>Modelo:</strong> <span id="bicicleta-modelo">Caloi</span></p>
+            <p><strong>Cor:</strong> <span id="bicicleta-cor">Azul</span></p>
+            <p><strong>Status:</strong> <span id="bicicleta-status">Parada</span></p>
+            <p><strong>Velocidade:</strong> <span id="bicicleta-velocidade">0</span> km/h</p>
+            <button data-acao="pedalar" data-tipo="bicicleta">Pedalar</button>
+            <button data-acao="frear" data-tipo="bicicleta">Frear</button>
+            <button data-acao="buzinar" data-tipo="bicicleta">Buzinar</button>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
