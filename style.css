@@ -1,61 +1,221 @@
+body {
+    font-family: sans-serif;
+    line-height: 1.6;
+    margin: 20px;
+    background-color: #f4f4f4;
+}
+
 #container {
-    font-family: Arial, sans-serif;
-    max-width: 800px;
-    margin: 20px auto;
+    max-width: 900px;
+    margin: auto;
+    background: #fff;
     padding: 20px;
-    background-color: #f9f9f9;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-h1 {
+h1, h2 {
     text-align: center;
     color: #333;
 }
 
 #selecione {
     text-align: center;
-    margin-top: 10px;
-    font-style: italic;
-    color: #777;
+    margin-bottom: 20px;
+    color: #555;
 }
 
 #veiculo-selection {
-    margin-top: 20px;
     text-align: center;
+    margin-bottom: 30px;
 }
 
 #veiculo-selection button {
     padding: 10px 15px;
-    margin: 5px;
-    border: none;
-    background-color: #4CAF50;
-    color: white;
+    margin: 0 5px;
     cursor: pointer;
+    border: 1px solid #ccc;
+    background-color: #eee;
     border-radius: 5px;
+    transition: background-color 0.2s ease;
 }
 
 #veiculo-selection button:hover {
-    background-color: #367c39;
+    background-color: #ddd;
 }
 
 .veiculo-container {
     border: 1px solid #ddd;
-    border-radius: 5px;
     padding: 20px;
     margin-top: 20px;
+    border-radius: 8px;
+    background-color: #fafafa;
 }
 
-.veiculo-container button {
+.veiculo-container h2 {
+    margin-top: 0;
+    color: #444;
+}
+
+.veiculo-img {
+    display: block;
+    margin: 10px auto 20px auto; /* Centraliza e adiciona margem */
+    transition: transform 0.1s ease-in-out; /* Transição suave para animação */
+}
+
+.veiculo-container p {
+    margin: 8px 0;
+    color: #333;
+}
+
+.veiculo-container p strong {
+    color: #111;
+}
+
+.veiculo-container .actions {
+    margin-top: 15px;
+    border-top: 1px dashed #eee;
+    padding-top: 15px;
+}
+
+.veiculo-container .actions button,
+.veiculo-container .actions input[type="number"],
+.veiculo-container .actions label {
+    margin-right: 8px;
+    margin-bottom: 8px; /* Espaçamento vertical entre itens */
     padding: 8px 12px;
-    margin: 5px;
-    border: none;
-    background-color: #007BFF;
-    color: white;
     cursor: pointer;
-    border-radius: 3px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
 }
 
-.veiculo-container button:hover {
-    background-color: #0056b3;
+.veiculo-container .actions button {
+    background-color: #5bc0de; /* Azul claro */
+    color: white;
+    border-color: #46b8da;
+}
+.veiculo-container .actions button:hover {
+    background-color: #31b0d5;
+    border-color: #269abc;
+}
+
+.veiculo-container .actions input[type="number"] {
+     width: 80px; /* Tamanho para o input de carga */
+}
+
+/* Estilos para status */
+.status-ligado {
+    color: #28a745; /* Verde */
+    font-weight: bold;
+}
+.status-desligado {
+    color: #dc3545; /* Vermelho */
+    font-weight: bold;
+}
+
+/* Animações simples */
+.veiculo-img.acelerando {
+    transform: translateX(5px) scale(1.02);
+}
+
+.veiculo-img.freando {
+    transform: translateX(-3px) scale(0.98);
+}
+
+
+/* --- Estilos para a Seção de Manutenção --- */
+.manutencao-section {
+    border-top: 1px solid #ccc;
+    margin-top: 25px; /* Mais espaço antes da seção */
+    padding-top: 20px; /* Mais espaço interno */
+}
+
+.manutencao-section h4 {
+    margin-bottom: 15px;
+    color: #333;
+    text-align: center;
+    font-size: 1.2em;
+}
+
+.manutencao-form {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border: 1px solid #eee;
+    border-radius: 5px;
+}
+
+.manutencao-form h5 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #555;
+}
+
+.manutencao-form input[type="datetime-local"],
+.manutencao-form input[type="text"],
+.manutencao-form input[type="number"],
+.manutencao-form textarea {
+    display: block;
+    width: calc(100% - 22px); /* Ajuste conforme padding/border */
+    padding: 8px 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.manutencao-form textarea {
+    min-height: 60px;
+    resize: vertical;
+}
+
+.manutencao-form button {
+    padding: 8px 15px;
+    background-color: #5cb85c; /* Verde */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-size: 0.9em;
+}
+
+.manutencao-form button:hover {
+    background-color: #4cae4c;
+}
+
+.manutencao-display {
+    margin-bottom: 15px;
+}
+
+.manutencao-display h5 {
+     margin-bottom: 8px;
+     color: #555;
+     font-size: 1em;
+}
+
+.manutencao-display ul {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 0;
+    max-height: 150px; /* Limita altura e adiciona scroll */
+    overflow-y: auto; /* Adiciona scroll se necessário */
+    border: 1px solid #eee;
+    padding: 10px;
+    background-color: #fff;
+     border-radius: 4px;
+}
+
+.manutencao-display ul li {
+    padding: 6px 2px; /* Ajuste padding */
+    font-size: 0.85em; /* Fonte um pouco menor */
+    color: #444;
+    border-bottom: 1px dashed #eee; /* Linha separadora suave */
+}
+.manutencao-display ul li:empty { /* Esconde 'li' vazio se houver erro */
+    display: none;
+}
+
+.manutencao-display ul li:last-child {
+    border-bottom: none;
 }
