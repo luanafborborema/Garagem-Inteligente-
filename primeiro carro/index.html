@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garagem Inteligente Unificada</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Container principal da aplicação -->
+    <div id="app-container">
+
+        <!-- Barra Lateral de Navegação -->
+        <nav id="sidebar">
+            <h2>Garagem</h2>
+            <ul id="sidebar-menu">
+                <!-- Veículos serão preenchidos pelo JS -->
+                <!-- Link para Adicionar Novo Veículo -->
+                <li class="sidebar-action"><a href="#" data-action="mostrarFormAddVeiculo">➕ Adicionar Veículo</a></li>
+            </ul>
+        </nav>
+
+        <!-- Área de Conteúdo Principal -->
+        <main id="main-content">
+            <!-- Área para exibir mensagens de feedback (substitui alerts) -->
+            <div id="feedback-message" class="feedback" style="display: none;"></div>
+
+            <!-- Mensagem inicial -->
+            <div id="welcome-message">
+                <h1>Bem-vinda à sua Garagem Inteligente!</h1>
+                <p>Selecione um veículo no menu ou adicione um novo.</p>
+            </div>
+
+            <!-- Formulário para Adicionar Novo Veículo (inicialmente escondido) -->
+            <div id="add-veiculo-form-container" class="form-container" style="display: none;">
+                <h2>Adicionar Novo Veículo</h2>
+                <form id="add-veiculo-form">
+                    <div class="form-group">
+                        <label for="add-tipo">Tipo de Veículo:</label>
+                        <select id="add-tipo" name="tipo" required>
+                            <option value="" disabled selected>Selecione...</option>
+                            <option value="carro">Carro Casual</option>
+                            <option value="esportivo">Carro Esportivo</option>
+                            <option value="caminhao">Caminhão</option>
+                            <option value="moto">Moto</option>
+                            <option value="bicicleta">Bicicleta</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="add-modelo">Modelo:</label>
+                        <input type="text" id="add-modelo" name="modelo" placeholder="Ex: Fusca Azul" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="add-cor">Cor:</label>
+                        <input type="text" id="add-cor" name="cor" placeholder="Ex: Azul Metálico" required>
+                    </div>
+                    <!-- Campo específico para Caminhão (aparece condicionalmente) -->
+                    <div id="add-caminhao-capacidade-group" class="form-group" style="display: none;">
+                        <label for="add-capacidade">Capacidade Carga (kg):</label>
+                        <input type="number" id="add-capacidade" name="capacidade" placeholder="Ex: 5000" min="0"
+                            step="100">
+                    </div>
+
+                    <button type="submit">Salvar Novo Veículo</button>
+                    <button type="button" id="cancel-add-veiculo">Cancelar</button>
+                </form>
+            </div>
+
+
+            <!-- Containers dos Veículos (serão controlados via JS/CSS) -->
+            <!-- Mantém a estrutura de cada container como estava antes -->
+
+            <!-- =================== Carro Casual =================== -->
+            <div id="carro-container" class="veiculo-container">
+                <h2>Carro Casual</h2>
+                <img id="carro-img" src="imagens/carro.png" alt="Carro" width="180" class="veiculo-img">
+                <p><strong>Modelo:</strong> <span id="carro-modelo">...</span></p>
+                <p><strong>Cor:</strong> <span id="carro-cor">...</span></p>
+                <p><strong>Status:</strong> <span id="carro-status" class="status-desligado">Desligado</span></p>
+                <p><strong>Velocidade:</strong> <span id="carro-velocidade">0</span> km/h</p>
+                <div class="actions"> <button data-acao="ligar" data-tipo="carro">Ligar</button> <button
+                        data-acao="desligar" data-tipo="carro">Desligar</button> <button data-acao="acelerar"
+                        data-tipo="carro">Acelerar</button> <button data-acao="frear"
+                        data-tipo="carro">Frear</button> <button data-acao="buzinar" data-tipo="carro">Buzinar</button>
+                </div>
+                <div class="manutencao-section">
+                    <h4>Manutenção</h4>
+                    <div class="manutencao-form">
+                        <h5>Registrar/Agendar</h5>
+                        <input type="datetime-local" id="carro-manutencao-data">
+                        <input type="text" id="carro-manutencao-tipo" placeholder="Tipo">
+                        <input type="number" id="carro-manutencao-custo" placeholder="Custo (R$)" min="0">
+                        <textarea id="carro-manutencao-descricao" placeholder="Descrição"></textarea>
+                        <button data-acao="agendarManutencao" data-tipo="carro">Adicionar</button>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Histórico</h5>
+                        <ul id="carro-historico-lista"></ul>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Agendamentos</h5>
+                        <ul id="carro-agendamentos-lista"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================== Carro Esportivo =================== -->
+            <div id="esportivo-container" class="veiculo-container">
+                <h2>Carro Esportivo</h2>
+                <img id="esportivo-img" src="imagens/cesportivo.png" alt="Esportivo" width="180" class="veiculo-img">
+                <p><strong>Modelo:</strong> <span id="esportivo-modelo">...</span></p>
+                <p><strong>Cor:</strong> <span id="esportivo-cor">...</span></p>
+                <p><strong>Status:</strong> <span id="esportivo-status" class="status-desligado">Desligado</span></p>
+                <p><strong>Velocidade:</strong> <span id="esportivo-velocidade">0</span> km/h</p>
+                <p><strong>Turbo:</strong> <span id="esportivo-turbo">Desativado</span></p>
+                <div class="actions"> <button data-acao="ligar" data-tipo="esportivo">Ligar</button> <button
+                        data-acao="desligar" data-tipo="esportivo">Desligar</button> <button data-acao="acelerar"
+                        data-tipo="esportivo">Acelerar</button> <button data-acao="frear"
+                        data-tipo="esportivo">Frear</button> <button data-acao="buzinar"
+                        data-tipo="esportivo">Buzinar</button> <button data-acao="ativarTurbo"
+                        data-tipo="esportivo">Turbo ON</button> <button data-acao="desativarTurbo"
+                        data-tipo="esportivo">Turbo OFF</button> </div>
+                <div class="manutencao-section">
+                    <h4>Manutenção</h4>
+                    <div class="manutencao-form">
+                        <h5>Registrar/Agendar</h5>
+                        <input type="datetime-local" id="esportivo-manutencao-data">
+                        <input type="text" id="esportivo-manutencao-tipo" placeholder="Tipo">
+                        <input type="number" id="esportivo-manutencao-custo" placeholder="Custo (R$)" min="0">
+                        <textarea id="esportivo-manutencao-descricao" placeholder="Descrição"></textarea>
+                        <button data-acao="agendarManutencao" data-tipo="esportivo">Adicionar</button>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Histórico</h5>
+                        <ul id="esportivo-historico-lista"></ul>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Agendamentos</h5>
+                        <ul id="esportivo-agendamentos-lista"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================== Caminhão =================== -->
+            <div id="caminhao-container" class="veiculo-container">
+                <h2>Caminhão</h2>
+                <img id="caminhao-img" src="imagens/caminhao.png" alt="Caminhão" width="180" class="veiculo-img">
+                <p><strong>Modelo:</strong> <span id="caminhao-modelo">...</span></p>
+                <p><strong>Cor:</strong> <span id="caminhao-cor">...</span></p>
+                <p><strong>Status:</strong> <span id="caminhao-status" class="status-desligado">Desligado</span></p>
+                <p><strong>Velocidade:</strong> <span id="caminhao-velocidade">0</span> km/h</p>
+                <p><strong>Carga:</strong> <span id="caminhao-carga">0</span> / <span id="caminhao-capacidade">5000</span> kg
+                </p>
+                <div class="actions"> <button data-acao="ligar" data-tipo="caminhao">Ligar</button> <button
+                        data-acao="desligar" data-tipo="caminhao">Desligar</button> <button data-acao="acelerar"
+                        data-tipo="caminhao">Acelerar</button> <button data-acao="frear"
+                        data-tipo="caminhao">Frear</button> <button data-acao="buzinar"
+                        data-tipo="caminhao">Buzinar</button> <label for="caminhao-carga-input">Carga(kg):</label>
+                    <input type="number" id="caminhao-carga-input" min="0"> <button data-acao="carregar"
+                        data-tipo="caminhao">Carregar</button> </div>
+                <div class="manutencao-section">
+                    <h4>Manutenção</h4>
+                    <div class="manutencao-form">
+                        <h5>Registrar/Agendar</h5>
+                        <input type="datetime-local" id="caminhao-manutencao-data">
+                        <input type="text" id="caminhao-manutencao-tipo" placeholder="Tipo">
+                        <input type="number" id="caminhao-manutencao-custo" placeholder="Custo (R$)" min="0">
+                        <textarea id="caminhao-manutencao-descricao" placeholder="Descrição"></textarea>
+                        <button data-acao="agendarManutencao" data-tipo="caminhao">Adicionar</button>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Histórico</h5>
+                        <ul id="caminhao-historico-lista"></ul>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Agendamentos</h5>
+                        <ul id="caminhao-agendamentos-lista"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================== Moto =================== -->
+            <div id="moto-container" class="veiculo-container">
+                <h2>Moto</h2>
+                <img id="moto-img" src="imagens/moto.jpg" alt="Moto" width="180" class="veiculo-img">
+                <p><strong>Modelo:</strong> <span id="moto-modelo">...</span></p>
+                <p><strong>Cor:</strong> <span id="moto-cor">...</span></p>
+                <p><strong>Status:</strong> <span id="moto-status" class="status-desligado">Desligado</span></p>
+                <p><strong>Velocidade:</strong> <span id="moto-velocidade">0</span> km/h</p>
+                <div class="actions"> <button data-acao="ligar" data-tipo="moto">Ligar</button> <button
+                        data-acao="desligar" data-tipo="moto">Desligar</button> <button data-acao="acelerar"
+                        data-tipo="moto">Acelerar</button> <button data-acao="frear"
+                        data-tipo="moto">Frear</button> <button data-acao="buzinar" data-tipo="moto">Buzinar</button>
+                </div>
+                <div class="manutencao-section">
+                    <h4>Manutenção</h4>
+                    <div class="manutencao-form">
+                        <h5>Registrar/Agendar</h5>
+                        <input type="datetime-local" id="moto-manutencao-data">
+                        <input type="text" id="moto-manutencao-tipo" placeholder="Tipo">
+                        <input type="number" id="moto-manutencao-custo" placeholder="Custo (R$)" min="0">
+                        <textarea id="moto-manutencao-descricao" placeholder="Descrição"></textarea>
+                        <button data-acao="agendarManutencao" data-tipo="moto">Adicionar</button>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Histórico</h5>
+                        <ul id="moto-historico-lista"></ul>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Agendamentos</h5>
+                        <ul id="moto-agendamentos-lista"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================== Bicicleta =================== -->
+            <div id="bicicleta-container" class="veiculo-container">
+                <h2>Bicicleta</h2>
+                <img id="bicicleta-img" src="imagens/bike.avif" alt="Bicicleta" width="180" class="veiculo-img">
+                <p><strong>Modelo:</strong> <span id="bicicleta-modelo">...</span></p>
+                <p><strong>Cor:</strong> <span id="bicicleta-cor">...</span></p>
+                <p><strong>Status:</strong> <span id="bicicleta-status" class="status-parada">Parada</span></p>
+                <p><strong>Velocidade:</strong> <span id="bicicleta-velocidade">0</span> km/h</p>
+                <div class="actions"> <button data-acao="pedalar" data-tipo="bicicleta">Pedalar</button> <button
+                        data-acao="frear" data-tipo="bicicleta">Frear</button> <button data-acao="buzinar"
+                        data-tipo="bicicleta">Campainha</button> </div>
+                <div class="manutencao-section">
+                    <h4>Manutenção</h4>
+                    <div class="manutencao-form">
+                        <h5>Registrar/Agendar</h5>
+                        <input type="datetime-local" id="bicicleta-manutencao-data">
+                        <input type="text" id="bicicleta-manutencao-tipo" placeholder="Tipo">
+                        <input type="number" id="bicicleta-manutencao-custo" placeholder="Custo (R$)" min="0">
+                        <textarea id="bicicleta-manutencao-descricao" placeholder="Descrição"></textarea>
+                        <button data-acao="agendarManutencao" data-tipo="bicicleta">Adicionar</button>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Histórico</h5>
+                        <ul id="bicicleta-historico-lista"></ul>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Agendamentos</h5>
+                        <ul id="bicicleta-agendamentos-lista"></ul>
+                    </div>
+                </div>
+            </div>
+
+        </main> <!-- Fim #main-content -->
+
+    </div> <!-- Fim #app-container -->
+
+    <footer>
+        <p>Desenvolvido por Luana Ferreira Borborema | Assistência: AI Studio</p>
+    </footer>
+
+    <script type="module" src="script.js"></script>
+</body>
+
+</html>
