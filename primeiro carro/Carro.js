@@ -3,7 +3,7 @@
  * @brief Classe que representa um carro comum.
  */
 
-import { Veiculo } from './Veiculo.js';
+import { Veiculo } from './Veiculo.js'; // ADICIONADO!
 import { tocarSom, animarVeiculo, atualizarInfoVeiculo, atualizarStatusVeiculo, mostrarFeedback, atualizarEstadoBotoes } from './funcoesAuxiliares.js';
 
 /**

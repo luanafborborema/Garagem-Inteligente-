@@ -3,6 +3,7 @@
  * @brief Classe que representa um carro esportivo.
  */
 
+import { Veiculo } from './Veiculo.js'; // ADICIONADO!
 import { Carro } from './Carro.js';
 import { tocarSom, animarVeiculo, atualizarInfoVeiculo, mostrarFeedback, atualizarEstadoBotoes } from './funcoesAuxiliares.js';
 

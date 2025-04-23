@@ -8,7 +8,8 @@
  * @abstract
  * @classdesc Classe abstrata que representa um veículo genérico. Não deve ser instanciada diretamente.
  */
-import { atualizarEstadoBotoes, tocarSom, atualizarStatusVeiculo, atualizarInfoVeiculo, mostrarFeedback } from './funcoesAuxiliares.js';
+import { tocarSom, atualizarEstadoBotoes, atualizarStatusVeiculo, atualizarInfoVeiculo, mostrarFeedback } from './funcoesAuxiliares.js';
+import { sons } from './script.js'; // ADICIONADO! (verifique se é a melhor solução)
 export class Veiculo {
     /**
      * @constructor

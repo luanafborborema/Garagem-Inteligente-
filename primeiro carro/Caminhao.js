@@ -3,6 +3,7 @@
  * @brief Classe que representa um caminhão.
  */
 
+import { Veiculo } from './Veiculo.js'; // ADICIONADO!
 import { Carro } from './Carro.js';
 import { tocarSom, animarVeiculo, atualizarInfoVeiculo, mostrarFeedback, atualizarEstadoBotoes, atualizarStatusVeiculo } from './funcoesAuxiliares.js';
 

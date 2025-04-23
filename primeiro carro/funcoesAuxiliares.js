@@ -3,6 +3,8 @@
  * @brief Arquivo contendo funções auxiliares utilizadas no projeto.
  */
 
+import { CarroEsportivo } from './CarroEsportivo.js'; // ADICIONADO!
+
 /**
  * @function tocarSom
  * @param {HTMLAudioElement} audioElement - Elemento de áudio a ser tocado.

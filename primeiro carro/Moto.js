@@ -3,6 +3,7 @@
  * @brief Classe que representa uma moto.
  */
 
+import { Veiculo } from './Veiculo.js'; // ADICIONADO!
 import { tocarSom, animarVeiculo, atualizarInfoVeiculo, atualizarStatusVeiculo, mostrarFeedback, atualizarEstadoBotoes } from './funcoesAuxiliares.js';
 
 /**
