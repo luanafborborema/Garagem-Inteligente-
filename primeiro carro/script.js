@@ -4,8 +4,12 @@
  * Gerencia a criação, exibição, interação e persistência dos veículos.
  */
 
-// Imports das Classes de Veículos e Manutenção
-import { Veiculo } from './Veiculo.js'; // Classe base (embora não instanciada diretamente)
+// ================================================================
+// !!! IMPORTANTE: ARQUIVOS DAS CLASSES NA RAIZ !!!
+// Certifique-se que os arquivos .js das classes estão na mesma pasta
+// que este script.js e index.html.
+// ================================================================
+import { Veiculo } from './Veiculo.js';
 import { Carro } from './Carro.js';
 import { CarroEsportivo } from './CarroEsportivo.js';
 import { Caminhao } from './Caminhao.js';
@@ -13,12 +17,22 @@ import { Moto } from './Moto.js';
 import { Bicicleta } from './Bicicleta.js';
 import { Manutencao } from './Manutencao.js';
 
-// Imports das Funções Auxiliares (algumas podem ser usadas diretamente pelas classes)
-import { mostrarFeedback, atualizarEstadoBotoes, atualizarInfoVeiculo } from './funcoesAuxiliares.js';
+// Função auxiliar simples para feedback
+function mostrarFeedback(mensagem, tipo = 'info') {
+    const feedbackDiv = document.getElementById('feedback-message');
+    if (feedbackDiv) {
+        feedbackDiv.textContent = mensagem;
+        feedbackDiv.className = `feedback feedback-${tipo}`;
+        feedbackDiv.style.display = 'block';
+        setTimeout(() => { feedbackDiv.style.display = 'none'; }, 5000);
+    } else {
+        console.log(`Feedback (${tipo}): ${mensagem}`);
+    }
+}
 
 // --- Estado da Aplicação ---
-let garagem = {}; // Objeto para armazenar veículos por ID { idVeiculo: objetoVeiculo }
-let veiculoAtual = null; // ID do veículo sendo exibido no momento
+let garagem = {}; // Objeto para armazenar veículos { chaveUnica: objetoVeiculo }
+let veiculoAtual = null; // Chave única (placa ou ID) do veículo sendo exibido
 
 // --- Mapeamento Tipo -> Classe ---
 const mapaTiposClasse = {
@@ -38,8 +52,9 @@ const addVeiculoForm = document.getElementById('add-veiculo-form');
 const cancelAddVeiculoBtn = document.getElementById('cancel-add-veiculo');
 const addTipoSelect = document.getElementById('add-tipo');
 const addCaminhaoCapacidadeGroup = document.getElementById('add-caminhao-capacidade-group');
+const addPlacaInput = document.getElementById('add-placa'); // Input da placa no form
 
-// --- Elementos de Som ---
+// --- Elementos de Som (Ignorando erros 404 por enquanto) ---
 const sons = {
     ligar: document.getElementById('som-ligar'),
     desligar: document.getElementById('som-desligar'),
@@ -47,7 +62,6 @@ const sons = {
     frear: document.getElementById('som-frear'),
     buzina: document.getElementById('som-buzina'),
     campainha: document.getElementById('som-campainha')
-    // Adicione outros sons se necessário (ex: turbo, freio de bike)
 };
 
 // --- Funções de Persistência (localStorage) ---
@@ -55,17 +69,31 @@ const sons = {
 /** @description Salva o estado atual da garagem no localStorage. */
 function salvarGaragem() {
     try {
-        // Converte cada objeto Veiculo para JSON usando o método toJSON da classe
+        // ================================================================
+        // !!! AÇÃO NECESSÁRIA NAS CLASSES .JS !!!
+        // Garanta que cada classe (Veiculo, Carro, etc.) tenha um método
+        // toJSON() que RETORNA um objeto incluindo a 'placa'.
+        // Exemplo em Veiculo.js:
+        // toJSON() {
+        //   return {
+        //     id: this.id, // Se tiver id
+        //     tipo: this.getTipo(), // Ou como pegar o tipo
+        //     modelo: this.modelo,
+        //     cor: this.cor,
+        //     placa: this.placa, // ESSENCIAL!
+        //     historicoManutencao: this.historicoManutencao.map(m => m.toJSON()),
+        //     // ... outros dados específicos (carga, turbo, etc)
+        //   };
+        // }
+        // ================================================================
         const garagemJSON = Object.values(garagem).map(v => v.toJSON());
         localStorage.setItem('garagemInteligente', JSON.stringify(garagemJSON));
         console.log("Garagem salva no localStorage.");
     } catch (error) {
-        console.error("Erro ao salvar garagem:", error);
+        console.error("Erro ao salvar garagem (verifique toJSON nas classes):", error);
         mostrarFeedback("Erro ao salvar dados da garagem.", 'error');
     }
 }
-// Disponibiliza globalmente para ser chamada de Veiculo.js (solução rápida)
-window.salvarGaragem = salvarGaragem;
 
 /** @description Carrega a garagem do localStorage e recria os objetos Veiculo. */
 function carregarGaragem() {
@@ -73,96 +101,136 @@ function carregarGaragem() {
     if (garagemSalva) {
         try {
             const garagemArrayJSON = JSON.parse(garagemSalva);
-            garagem = {}; // Limpa a garagem atual antes de carregar
+            garagem = {};
             garagemArrayJSON.forEach(veiculoData => {
                 const ClasseVeiculo = mapaTiposClasse[veiculoData.tipo];
                 if (ClasseVeiculo) {
-                    // Cria a instância correta passando os dados salvos
-                    // Nota: O construtor de cada classe deve ser capaz de lidar com esses dados
-                     const veiculo = new ClasseVeiculo(
+                    // ================================================================
+                    // !!! AÇÃO NECESSÁRIA NAS CLASSES .JS !!!
+                    // Garanta que o CONSTRUTOR de cada classe aceite 'placa'
+                    // como parâmetro e a armazene (this.placa = placa).
+                    // A ORDEM dos parâmetros aqui DEVE BATER com o construtor!
+                    // Exemplo de construtor em Carro.js:
+                    // constructor(modelo, cor, placa, id = null, historico = [], /* outros */) {
+                    //   super(modelo, cor, placa, id, historico); // Chama construtor de Veiculo
+                    //   this.placa = placa; // Armazena placa
+                    //   // ... resto do construtor ...
+                    // }
+                    // ================================================================
+                    const veiculo = new ClasseVeiculo(
                         veiculoData.modelo,
                         veiculoData.cor,
-                        veiculoData.id, // Passa o ID salvo
-                        veiculoData.historicoManutencao, // Passa o histórico salvo
-                        // Passa dados específicos da subclasse, se existirem
-                        veiculoData.capacidadeCarga, // Para Caminhao (será undefined para outros)
+                        veiculoData.placa, // <--- Passando a placa
+                        veiculoData.id, // Passando ID (se houver)
+                        veiculoData.historicoManutencao ? veiculoData.historicoManutencao.map(m => Manutencao.fromJSON(m)) : [], // Recria Manutencoes
+                        // Dados específicos (ajuste a ordem conforme seu construtor!)
+                        veiculoData.capacidadeCarga, // Para Caminhao
                         veiculoData.cargaAtual,       // Para Caminhao
                         veiculoData.turboAtivado      // Para CarroEsportivo
                     );
 
-                    // Re-ajusta carga/capacidade se for caminhão, pois construtor pode ter padrões
-                     if (veiculo instanceof Caminhao && veiculoData.capacidadeCarga !== undefined) {
-                        veiculo.capacidadeCarga = veiculoData.capacidadeCarga;
-                        veiculo.cargaAtual = veiculoData.cargaAtual !== undefined ? veiculoData.cargaAtual : 0;
-                     }
+                    // Usa a PLACA como chave principal se existir, senão o ID
+                    const chaveGaragem = veiculoData.placa || veiculoData.id;
+                    if (chaveGaragem) {
+                       garagem[chaveGaragem] = veiculo;
+                    } else {
+                        console.warn("Veículo sem placa ou ID não pode ser carregado:", veiculoData);
+                    }
 
-                    garagem[veiculo.id] = veiculo; // Adiciona ao objeto garagem usando o ID
                 } else {
-                    console.warn(`Tipo de veículo desconhecido encontrado no localStorage: ${veiculoData.tipo}`);
+                    console.warn(`Tipo de veículo desconhecido no localStorage: ${veiculoData.tipo}`);
                 }
             });
             console.log("Garagem carregada:", garagem);
         } catch (error) {
-            console.error("Erro ao carregar ou parsear garagem do localStorage:", error);
-            garagem = {}; // Reseta a garagem em caso de erro
-            localStorage.removeItem('garagemInteligente'); // Remove dados corrompidos
-            mostrarFeedback("Erro ao carregar dados salvos. Começando com garagem vazia.", 'error');
+            console.error("Erro ao carregar garagem (verifique construtores e formato JSON):", error);
+            garagem = {};
+            localStorage.removeItem('garagemInteligente');
+            mostrarFeedback("Erro ao carregar dados salvos. Garagem resetada.", 'error');
         }
     } else {
-        garagem = {}; // Garagem vazia se não houver nada salvo
-        console.log("Nenhuma garagem salva encontrada. Começando do zero.");
+        garagem = {};
+        console.log("Nenhuma garagem salva encontrada.");
     }
 }
 
+
+// --- Função da API Simulada ---
+/**
+ * Busca detalhes adicionais de um veículo na API simulada (arquivo JSON local).
+ * @param {string} placa - A placa do veículo a ser buscado.
+ * @returns {Promise<object|null>} Promise com detalhes ou null.
+ */
+async function buscarDetalhesVeiculoAPI(placa) {
+    if (!placa || placa === 'N/A') {
+        return null;
+    }
+    console.log(`Buscando API para placa: ${placa}`);
+    try {
+        // Certifique-se que 'dados_veiculos_api.json' está na raiz do projeto
+        const response = await fetch('./dados_veiculos_api.json');
+        if (!response.ok) {
+            // Se o ARQUIVO não for encontrado, o fetch falha aqui
+            throw new Error(`Erro ${response.status} ao buscar ${response.url}`);
+        }
+        const dadosVeiculos = await response.json(); // Pode dar erro se JSON for inválido
+
+        // Procura ignorando maiúsculas/minúsculas
+        const detalhes = dadosVeiculos.find(v => v.placa && v.placa.toUpperCase() === placa.toUpperCase());
+
+        return detalhes || null; // Retorna o objeto encontrado ou null
+
+    } catch (error) {
+        console.error("Erro na função buscarDetalhesVeiculoAPI:", error);
+        mostrarFeedback("Não foi possível buscar detalhes extras.", 'error');
+        return null; // Indica erro retornando null
+    }
+}
+
+
 // --- Funções de Interface e Lógica ---
 
-/** @description Atualiza a lista de veículos na barra lateral. */
+/** @description Atualiza a lista na barra lateral. */
 function popularSidebar() {
-    // Limpa itens antigos (exceto o botão de adicionar)
-    const itensVeiculo = sidebarMenu.querySelectorAll('li.veiculo-item');
-    itensVeiculo.forEach(item => item.remove());
-
-    // Encontra o item de ação 'Adicionar Veículo' para inserir antes dele
+    sidebarMenu.querySelectorAll('li.veiculo-item').forEach(item => item.remove());
     const addActionItem = sidebarMenu.querySelector('li.sidebar-action');
 
-    // Adiciona cada veículo da garagem à lista
     Object.values(garagem).sort((a, b) => a.modelo.localeCompare(b.modelo)).forEach(veiculo => {
         const li = document.createElement('li');
         li.classList.add('veiculo-item');
-        li.innerHTML = `<a href="#" data-id="${veiculo.id}">${veiculo.modelo} (${veiculo.getTipo()})</a>`;
+        // Usa a PLACA como ID no HTML se existir, senão o ID interno
+        const idHtml = veiculo.placa || veiculo.id;
+        li.innerHTML = `<a href="#" data-id="${idHtml}">${veiculo.modelo} (${veiculo.placa || 'Sem Placa'})</a>`;
 
-        // Adiciona listener para mostrar o veículo ao clicar no link
         li.querySelector('a').addEventListener('click', (e) => {
             e.preventDefault();
-            mostrarVeiculo(veiculo.id);
+            mostrarVeiculo(idHtml); // Mostra usando a chave (placa ou id)
         });
 
-        // Insere o novo item ANTES do botão 'Adicionar Veículo'
         if (addActionItem) {
             sidebarMenu.insertBefore(li, addActionItem);
         } else {
-            sidebarMenu.appendChild(li); // Fallback caso o botão não seja encontrado
+            sidebarMenu.appendChild(li);
         }
     });
 }
 
 /**
- * @description Esconde todos os conteúdos principais e mostra o container do veículo selecionado.
- * @param {string} idVeiculo - O ID do veículo a ser exibido.
+ * @description Mostra os detalhes do veículo selecionado.
+ * @param {string} chaveVeiculo - A chave (placa ou ID) do veículo.
  */
-function mostrarVeiculo(idVeiculo) {
-    const veiculo = garagem[idVeiculo];
+function mostrarVeiculo(chaveVeiculo) {
+    const veiculo = garagem[chaveVeiculo];
     if (!veiculo) {
-        console.error(`Veículo com ID ${idVeiculo} não encontrado na garagem.`);
+        console.error(`Veículo com chave ${chaveVeiculo} não encontrado na garagem.`);
         mostrarFeedback("Erro: Veículo não encontrado.", 'error');
-        // Volta para a tela de boas-vindas se não encontrar
         mostrarWelcome();
         return;
     }
 
-    veiculoAtual = idVeiculo; // Define o veículo atual
+    veiculoAtual = chaveVeiculo; // Armazena a chave do veículo atual
 
-    // Esconde tudo (welcome, form, todos os containers)
+    // Esconde tudo antes de mostrar o certo
     welcomeMessage.style.display = 'none';
     addVeiculoFormContainer.style.display = 'none';
     document.querySelectorAll('.veiculo-container').forEach(container => {
@@ -170,125 +238,172 @@ function mostrarVeiculo(idVeiculo) {
         container.classList.remove('active');
     });
 
-    // Encontra e mostra o container correto
-    const prefix = veiculo.getIdPrefix();
-    const container = document.getElementById(`${prefix}-container`);
+    // Pega o tipo e monta o ID do container (ex: #carro-container)
+    const tipoVeiculo = veiculo.getTipo ? veiculo.getTipo() : (veiculo.constructor.name.toLowerCase());
+    const containerId = `${tipoVeiculo}-container`;
+    const container = document.getElementById(containerId);
+
     if (container) {
-        // Atualiza as informações estáticas (modelo, cor) e dinâmicas
-        atualizarInfoVeiculo(prefix, { modelo: veiculo.modelo, cor: veiculo.cor });
-        veiculo.atualizarVelocidade();
-        veiculo.atualizarStatus();
-        // Atualiza informações específicas se existirem
-        if (veiculo instanceof Caminhao) veiculo.atualizarInfoCaminhao();
-        if (veiculo instanceof CarroEsportivo) veiculo.atualizarTurboDisplay();
+        // Atualiza informações básicas (modelo, cor, PLACA)
+        container.querySelector(`#${tipoVeiculo}-modelo`).textContent = veiculo.modelo;
+        container.querySelector(`#${tipoVeiculo}-cor`).textContent = veiculo.cor;
+        const placaSpan = container.querySelector(`#${tipoVeiculo}-placa`);
+        if (placaSpan) {
+             // !!! Garanta que o objeto 'veiculo' TENHA a propriedade 'placa' !!!
+            placaSpan.textContent = veiculo.placa || 'N/A';
+        } else {
+             console.warn(`Span para placa #${tipoVeiculo}-placa não encontrado no HTML.`);
+        }
 
-        // Atualiza o display de manutenção
-        veiculo.atualizarDisplayManutencao();
 
-        // Atualiza o estado dos botões
-        atualizarEstadoBotoes(veiculo);
+        // Chama métodos de atualização do próprio objeto veículo (se existirem)
+        if (typeof veiculo.atualizarStatus === 'function') veiculo.atualizarStatus(); else console.warn("Método atualizarStatus não encontrado em", veiculo);
+        if (typeof veiculo.atualizarVelocidade === 'function') veiculo.atualizarVelocidade(); else console.warn("Método atualizarVelocidade não encontrado em", veiculo);
+        if (veiculo instanceof Caminhao && typeof veiculo.atualizarInfoCaminhao === 'function') veiculo.atualizarInfoCaminhao();
+        if (veiculo instanceof CarroEsportivo && typeof veiculo.atualizarTurboDisplay === 'function') veiculo.atualizarTurboDisplay();
+        if (typeof veiculo.atualizarDisplayManutencao === 'function') veiculo.atualizarDisplayManutencao(); else console.warn("Método atualizarDisplayManutencao não encontrado em", veiculo);
 
-        // Mostra o container
+
+        // Limpa a área de detalhes da API ao mostrar
+        const apiResultDiv = container.querySelector('.api-details-result');
+        if (apiResultDiv) {
+            apiResultDiv.innerHTML = '<p class="text-muted">Clique no botão para buscar detalhes.</p>';
+        } else {
+             console.warn("Div .api-details-result não encontrada no container:", containerId);
+        }
+
+        // Mostra o container correto e marca como ativo
         container.style.display = 'block';
         container.classList.add('active');
 
-        // Atualiza a seleção na sidebar
+        // Marca o item correto na sidebar
         document.querySelectorAll('#sidebar-menu a').forEach(a => a.classList.remove('active'));
-        const linkSidebar = document.querySelector(`#sidebar-menu a[data-id="${idVeiculo}"]`);
+        const linkSidebar = document.querySelector(`#sidebar-menu a[data-id="${chaveVeiculo}"]`);
         if (linkSidebar) linkSidebar.classList.add('active');
 
-        mainContent.classList.add('content-visible'); // Sinaliza que algo está visível
+        mainContent.classList.add('content-visible');
 
     } else {
-        console.error(`Container #${prefix}-container não encontrado para o veículo ${veiculo.modelo}`);
-        mostrarFeedback("Erro ao exibir o veículo. Container não encontrado.", 'error');
-        mostrarWelcome(); // Volta para welcome em caso de erro
+        console.error(`Container HTML #${containerId} não encontrado.`);
+        mostrarFeedback("Erro ao exibir veículo: interface não encontrada.", 'error');
+        mostrarWelcome();
     }
 }
 
-/** @description Mostra o formulário para adicionar um novo veículo. */
+/** @description Mostra o formulário para adicionar veículo. */
 function mostrarFormAddVeiculo() {
-    veiculoAtual = null; // Nenhum veículo selecionado
-    // Esconde tudo
+    veiculoAtual = null;
     welcomeMessage.style.display = 'none';
-    document.querySelectorAll('.veiculo-container').forEach(container => {
-        container.style.display = 'none';
-        container.classList.remove('active');
-    });
-    // Reseta e mostra o formulário
-    addVeiculoForm.reset();
-    addCaminhaoCapacidadeGroup.style.display = 'none'; // Esconde campo de capacidade
+    document.querySelectorAll('.veiculo-container').forEach(c => { c.style.display = 'none'; c.classList.remove('active'); });
+
+    addVeiculoForm.reset(); // Limpa o formulário
+    addCaminhaoCapacidadeGroup.style.display = 'none'; // Esconde campo de caminhão
+    // Garante que campo placa esteja visível inicialmente (será escondido se selecionar bike)
+    if(addPlacaInput) {
+        const placaGroup = addPlacaInput.closest('.form-group');
+        if(placaGroup) placaGroup.style.display = 'block';
+        addPlacaInput.required = true; // Começa como obrigatório (exceto bike)
+        addPlacaInput.disabled = false; // Garante que não está desabilitado
+    }
+
     addVeiculoFormContainer.style.display = 'block';
-    addVeiculoFormContainer.classList.add('active'); // Usa classe se o CSS depender dela
+    addVeiculoFormContainer.classList.add('active');
 
-    // Remove seleção da sidebar
     document.querySelectorAll('#sidebar-menu a').forEach(a => a.classList.remove('active'));
-     // Marca o link 'Adicionar' como ativo (opcional)
-     const addLink = document.querySelector('#sidebar-menu a[data-action="mostrarFormAddVeiculo"]');
-     if (addLink) addLink.classList.add('active');
-
+    const addLink = document.querySelector('#sidebar-menu a[data-action="mostrarFormAddVeiculo"]');
+    if (addLink) addLink.classList.add('active');
     mainContent.classList.add('content-visible');
 }
 
-/** @description Mostra a mensagem de boas-vindas e esconde outros conteúdos. */
+/** @description Mostra a tela de boas-vindas. */
 function mostrarWelcome() {
     veiculoAtual = null;
-     // Esconde form e containers
     addVeiculoFormContainer.style.display = 'none';
-    addVeiculoFormContainer.classList.remove('active');
-    document.querySelectorAll('.veiculo-container').forEach(container => {
-        container.style.display = 'none';
-        container.classList.remove('active');
-    });
-    // Mostra welcome
+    document.querySelectorAll('.veiculo-container').forEach(c => { c.style.display = 'none'; c.classList.remove('active'); });
     welcomeMessage.style.display = 'block';
-    // Remove seleção da sidebar
     document.querySelectorAll('#sidebar-menu a').forEach(a => a.classList.remove('active'));
-    mainContent.classList.remove('content-visible'); // Sinaliza que só welcome está visível
+    mainContent.classList.remove('content-visible');
 }
 
 // --- Tratamento de Eventos ---
 
 // Evento: Submissão do Formulário de Adicionar Veículo
 addVeiculoForm.addEventListener('submit', (e) => {
-    e.preventDefault(); // Impede recarregamento da página
+    e.preventDefault();
     const formData = new FormData(addVeiculoForm);
     const tipo = formData.get('tipo');
     const modelo = formData.get('modelo').trim();
     const cor = formData.get('cor').trim();
-    const capacidade = formData.get('capacidade'); // Pode ser null se não for caminhão
+    const placaInput = formData.get('placa'); // Pega do form
+    const placa = placaInput ? placaInput.trim().toUpperCase() : null; // Limpa e capitaliza
+    const capacidade = formData.get('capacidade');
 
     if (!tipo || !modelo || !cor) {
-        mostrarFeedback("Por favor, preencha tipo, modelo e cor.", 'warning');
+        mostrarFeedback("Preencha tipo, modelo e cor.", 'warning');
         return;
+    }
+
+    // Validação da placa (obrigatória exceto para bicicleta)
+    if (tipo !== 'bicicleta') {
+        if (!placa) {
+            mostrarFeedback("Placa é obrigatória para este tipo de veículo.", 'warning');
+            return;
+        }
+        if (placa.length < 5) { // Validação mínima de exemplo
+             mostrarFeedback("Placa inválida (mínimo 5 caracteres).", 'warning');
+             return;
+        }
+         // Verifica se placa já existe
+        if (garagem[placa]) {
+            mostrarFeedback(`Veículo com placa ${placa} já existe!`, 'error');
+            return;
+        }
     }
 
     const ClasseVeiculo = mapaTiposClasse[tipo];
     if (ClasseVeiculo) {
         let novoVeiculo;
         try {
-            // Instancia o veículo correto
+            // ================================================================
+            // !!! ATENÇÃO À ORDEM DOS PARÂMETROS DO CONSTRUTOR !!!
+            // A ordem aqui DEVE corresponder EXATAMENTE ao construtor
+            // da sua classe JS (Veiculo, Carro, Caminhao...).
+            // Inclua 'placa' na posição correta.
+            // ================================================================
             if (tipo === 'caminhao') {
-                novoVeiculo = new ClasseVeiculo(modelo, cor, parseInt(capacidade) || 5000); // Passa capacidade
-            } else {
-                novoVeiculo = new ClasseVeiculo(modelo, cor);
+                // Exemplo: new Caminhao(modelo, cor, placa, id?, hist?, capacidade?, carga?)
+                novoVeiculo = new ClasseVeiculo(modelo, cor, placa, null, [], parseInt(capacidade) || 5000, 0);
+            } else if (tipo === 'bicicleta') {
+                 // Exemplo: new Bicicleta(modelo, cor, placa=null, id?, hist?)
+                 novoVeiculo = new ClasseVeiculo(modelo, cor, null, null, []);
+            }
+            // Adicione 'else if' para outros tipos com construtores diferentes (Esportivo?)
+             else {
+                 // Exemplo: new Carro(modelo, cor, placa, id?, hist?)
+                novoVeiculo = new ClasseVeiculo(modelo, cor, placa, null, []);
             }
 
-            // Verifica se já existe um veículo com mesmo ID (improvável, mas seguro)
-            if (garagem[novoVeiculo.id]) {
-                 mostrarFeedback(`Um veículo com ID ${novoVeiculo.id} já existe.`, 'error');
-                 return;
+            // Usa a PLACA como chave se existir, senão o ID (se for gerado pela classe)
+            const chaveGaragem = novoVeiculo.placa || novoVeiculo.id;
+            if (!chaveGaragem) {
+                 throw new Error("Veículo criado sem placa ou ID válido.");
+            }
+            if (garagem[chaveGaragem]) {
+                 mostrarFeedback(`Erro: Identificador ${chaveGaragem} já existe.`, 'error');
+                 return; // Evita sobrescrever
             }
 
-            garagem[novoVeiculo.id] = novoVeiculo; // Adiciona à garagem
-            salvarGaragem(); // Salva no localStorage
-            popularSidebar(); // Atualiza a sidebar
-            mostrarVeiculo(novoVeiculo.id); // Mostra o veículo recém-criado
-            mostrarFeedback(`Veículo '${modelo}' adicionado com sucesso!`, 'success');
+            garagem[chaveGaragem] = novoVeiculo;
+            salvarGaragem();
+            popularSidebar();
+            mostrarVeiculo(chaveGaragem); // Mostra o novo veículo
+            mostrarFeedback(`'${modelo}' adicionado com sucesso!`, 'success');
             addVeiculoForm.reset(); // Limpa o formulário
+            // Esconde form e volta para o veículo (ou welcome se for o primeiro)
+            addVeiculoFormContainer.style.display = 'none';
 
         } catch (error) {
-            console.error("Erro ao criar veículo:", error);
+            console.error("Erro ao instanciar ou adicionar veículo:", error);
             mostrarFeedback(`Erro ao criar ${tipo}: ${error.message}`, 'error');
         }
     } else {
@@ -298,161 +413,194 @@ addVeiculoForm.addEventListener('submit', (e) => {
 
 // Evento: Cancelar Adição de Veículo
 cancelAddVeiculoBtn.addEventListener('click', () => {
-    addVeiculoFormContainer.style.display = 'none'; // Esconde o formulário
+    addVeiculoFormContainer.style.display = 'none';
     addVeiculoFormContainer.classList.remove('active');
-    mostrarWelcome(); // Volta para a tela inicial
+    // Decide se volta para welcome ou para o veículo que estava antes (se houver)
+    if (veiculoAtual && garagem[veiculoAtual]) {
+        mostrarVeiculo(veiculoAtual);
+    } else {
+        mostrarWelcome();
+    }
 });
 
-// Evento: Mudar o tipo no formulário de adição (para mostrar/esconder capacidade do caminhão)
+// Evento: Mudar o tipo no formulário (controla visibilidade de campos)
 addTipoSelect.addEventListener('change', (e) => {
-    if (e.target.value === 'caminhao') {
+    const tipoSelecionado = e.target.value;
+    const placaGroup = addPlacaInput ? addPlacaInput.closest('.form-group') : null;
+
+    // Controle Caminhão
+    if (tipoSelecionado === 'caminhao') {
         addCaminhaoCapacidadeGroup.style.display = 'block';
     } else {
         addCaminhaoCapacidadeGroup.style.display = 'none';
     }
-});
 
-// Evento: Cliques nos botões de Ação dos Veículos e Manutenção (Usando Event Delegation)
-mainContent.addEventListener('click', (e) => {
-    const target = e.target;
-
-    // --- Ações do Veículo ---
-    // Verifica se o clique foi em um botão com data-acao e dentro de .actions
-    if (target.tagName === 'BUTTON' && target.dataset.acao && target.closest('.actions')) {
-        const acao = target.dataset.acao;
-        // const tipo = target.dataset.tipo; // Não precisamos mais do tipo, usamos veiculoAtual
-
-        if (!veiculoAtual || !garagem[veiculoAtual]) {
-            mostrarFeedback("Nenhum veículo selecionado para realizar a ação.", 'warning');
-            return;
+    // Controle Placa
+    if (tipoSelecionado === 'bicicleta') {
+        if (placaGroup) placaGroup.style.display = 'none'; // Esconde
+        if (addPlacaInput) {
+            addPlacaInput.required = false; // Não obrigatória
+            addPlacaInput.value = ''; // Limpa
+            addPlacaInput.disabled = true; // Desabilita para bike
         }
-        const veiculo = garagem[veiculoAtual];
-
-        // Executa a ação correspondente no objeto do veículo
-        try {
-            switch (acao) {
-                case 'ligar':
-                    veiculo.ligar(sons); // Passa o objeto sons
-                    break;
-                case 'desligar':
-                    veiculo.desligar(sons);
-                    break;
-                case 'acelerar':
-                case 'pedalar': // Trata pedalar como acelerar aqui
-                    veiculo.acelerar(sons);
-                    break;
-                case 'frear':
-                    veiculo.frear(sons);
-                    break;
-                case 'buzinar':
-                    veiculo.buzinar(sons);
-                    break;
-                // Ações específicas
-                case 'ativarTurbo':
-                    if (veiculo instanceof CarroEsportivo) veiculo.ativarTurbo();
-                    break;
-                case 'desativarTurbo':
-                    if (veiculo instanceof CarroEsportivo) veiculo.desativarTurbo();
-                    break;
-                case 'carregar':
-                    if (veiculo instanceof Caminhao) {
-                        const cargaInput = document.getElementById('caminhao-carga-input');
-                        const quantidade = cargaInput ? cargaInput.value : null;
-                        if (quantidade) {
-                            veiculo.carregar(quantidade);
-                            cargaInput.value = ''; // Limpa o input após carregar
-                        } else {
-                            mostrarFeedback("Informe a quantidade a carregar.", "warning");
-                        }
-                    }
-                    break;
-                case 'descarregar':
-                     if (veiculo instanceof Caminhao) {
-                        const cargaInput = document.getElementById('caminhao-carga-input');
-                        const quantidade = cargaInput ? cargaInput.value : null;
-                        if (quantidade) {
-                            veiculo.descarregar(quantidade);
-                            cargaInput.value = ''; // Limpa o input após descarregar
-                        } else {
-                            // Permite descarregar sem input se houver carga? Não, força input.
-                            // Se quisesse descarregar tudo sem input, a lógica seria diferente.
-                             mostrarFeedback("Informe a quantidade a descarregar.", "warning");
-                        }
-                    }
-                    break;
-                default:
-                    console.warn(`Ação desconhecida: ${acao}`);
-            }
-            // Após qualquer ação, atualiza os botões (exceto para ligar/desligar que já fazem isso)
-            // if (!['ligar', 'desligar'].includes(acao)) {
-            //    atualizarEstadoBotoes(veiculo);
-            // }
-        } catch (error) {
-             console.error(`Erro ao executar ação '${acao}' no veículo ${veiculo.id}:`, error);
-             mostrarFeedback(`Erro: ${error.message}`, 'error');
-        }
-    }
-
-    // --- Remover Manutenção ---
-    // Verifica se o clique foi no botão de remover manutenção
-     if (target.tagName === 'BUTTON' && target.classList.contains('remover-manutencao-btn')) {
-        const idManutencao = target.dataset.id;
-         if (veiculoAtual && garagem[veiculoAtual] && idManutencao) {
-             const veiculo = garagem[veiculoAtual];
-             // Pede confirmação
-             if (confirm("Tem certeza que deseja remover este registro de manutenção?")) {
-                 veiculo.removerManutencao(idManutencao);
-                 // A função removerManutencao já salva e atualiza o display
-             }
+    } else {
+        if (placaGroup) placaGroup.style.display = 'block'; // Mostra
+         if (addPlacaInput) {
+             addPlacaInput.required = true; // Obrigatória
+             addPlacaInput.disabled = false; // Habilita
          }
     }
 });
 
+// Evento: Cliques Gerais no Conteúdo Principal (Delegação)
+mainContent.addEventListener('click', (e) => {
+    const target = e.target;
 
-// Evento: Submissão do Formulário de Manutenção (Usando Event Delegation)
-mainContent.addEventListener('submit', (e) => {
-    // Verifica se a submissão veio de um formulário de manutenção
-    if (e.target.classList.contains('manutencao-form')) {
-        e.preventDefault(); // Impede recarregamento
-        const form = e.target;
-        const tipoVeiculo = form.dataset.tipo; // Pega o tipo do data attribute do form
-
-        if (!veiculoAtual || !garagem[veiculoAtual] || garagem[veiculoAtual].getTipo() !== tipoVeiculo) {
-            mostrarFeedback("Erro: Veículo atual não corresponde ao formulário de manutenção.", 'error');
-            return;
+    // --- Ações do Veículo (botões com data-acao dentro de .actions) ---
+    if (target.tagName === 'BUTTON' && target.dataset.acao && target.closest('.actions')) {
+        // A lógica para ações como ligar, acelerar, etc. parece OK no código anterior.
+        // Mantenha essa parte como estava, garantindo que 'veiculoAtual' e 'garagem[veiculoAtual]' são válidos.
+        const acao = target.dataset.acao;
+        if (!veiculoAtual || !garagem[veiculoAtual]) {
+            mostrarFeedback("Nenhum veículo selecionado.", 'warning'); return;
         }
         const veiculo = garagem[veiculoAtual];
+        try {
+            // Seu mapeamento de ações para métodos aqui... (mantenha o seu)
+             const acoesMetodos = { /* ... seu mapeamento ... */ };
+             // Exemplo básico:
+             if (typeof veiculo[acao] === 'function') {
+                 // Passa sons se o método precisar (adapte conforme suas classes)
+                 if (['ligar', 'desligar', 'acelerar', 'frear', 'buzinar'].includes(acao)) {
+                    veiculo[acao](sons);
+                 } else {
+                     veiculo[acao]();
+                 }
+                 // A classe deve cuidar de atualizar a UI e salvar se necessário.
+                 // Se não, faça aqui: salvarGaragem(); mostrarVeiculo(veiculoAtual);
+             } else if (acao === 'pedalar' && typeof veiculo.acelerar === 'function') { // Caso especial bike
+                  veiculo.acelerar(sons);
+             } else if (acao === 'carregar' || acao === 'descarregar') { // Caso especial caminhão
+                 const cargaInput = document.getElementById('caminhao-carga-input');
+                 const quantidade = cargaInput ? parseInt(cargaInput.value) : 0;
+                 if (quantidade > 0) {
+                     if (veiculo instanceof Caminhao && typeof veiculo[acao] === 'function') {
+                         veiculo[acao](quantidade);
+                         cargaInput.value = '';
+                         // veiculo[acao] deve salvar e atualizar UI
+                     }
+                 } else {
+                    mostrarFeedback("Informe quantidade válida.", "warning");
+                 }
+             } else if (acao === 'ativarTurbo' || acao === 'desativarTurbo') { // Caso especial Esportivo
+                  if (veiculo instanceof CarroEsportivo && typeof veiculo[acao] === 'function') {
+                         veiculo[acao]();
+                         // veiculo[acao] deve salvar e atualizar UI
+                     }
+             }
+             else { console.warn(`Ação/Método ${acao} não encontrada no veículo.`); }
 
-        // Pega os dados do formulário específico do veículo atual
-        const prefix = veiculo.getIdPrefix();
-        const dataInput = document.getElementById(`${prefix}-manutencao-data`);
-        const tipoInput = document.getElementById(`${prefix}-manutencao-tipo`);
-        const custoInput = document.getElementById(`${prefix}-manutencao-custo`);
-        const descInput = document.getElementById(`${prefix}-manutencao-descricao`);
+        } catch (error) {
+             console.error(`Erro na ação '${acao}':`, error); mostrarFeedback(`Erro: ${error.message}`, 'error');
+        }
+    }
 
-        if (!dataInput || !tipoInput || !custoInput || !descInput) {
-             mostrarFeedback("Erro: Campos do formulário de manutenção não encontrados.", 'error');
-             return;
+    // --- Remover Manutenção ---
+    if (target.tagName === 'BUTTON' && target.classList.contains('remover-manutencao-btn')) {
+        // Sua lógica de remover manutenção aqui... (mantenha a sua)
+         const idManutencao = target.dataset.id;
+         if (veiculoAtual && garagem[veiculoAtual] && idManutencao) {
+             const veiculo = garagem[veiculoAtual];
+             if (confirm("Remover este registro de manutenção?")) {
+                 if (typeof veiculo.removerManutencao === 'function') {
+                    veiculo.removerManutencao(idManutencao); // Método deve salvar e atualizar UI
+                 }
+             }
+         }
+    }
+
+    // --- Buscar Detalhes da API Simulada ---
+    // Usando a versão robusta que verifica os elementos
+    if (target.classList.contains('details-api-btn')) {
+        if (!veiculoAtual || !garagem[veiculoAtual]) {
+          mostrarFeedback("Selecione um veículo.", 'warning'); return;
+        }
+        const veiculo = garagem[veiculoAtual];
+        // !!! Garanta que veiculo.placa existe e está correto !!!
+        const placa = veiculo.placa;
+
+        const veiculoContainer = target.closest('.veiculo-container');
+        if (!veiculoContainer) {
+            console.error("FATAL: Container pai .veiculo-container não encontrado."); return;
+        }
+        const resultDiv = veiculoContainer.querySelector('.api-details-result');
+        if (!resultDiv) {
+            console.error("FATAL: Div .api-details-result não encontrada no container."); return;
         }
 
-        const data = dataInput.value;
-        const tipo = tipoInput.value.trim();
-        const custo = custoInput.value;
-        const descricao = descInput.value.trim();
+        if (!placa || placa === 'N/A') {
+            resultDiv.innerHTML = '<p class="text-secondary">Veículo sem placa para consulta.</p>'; return;
+        }
 
-        // Cria e valida o objeto Manutencao
-        const novaManutencao = new Manutencao(data, tipo, custo, descricao);
-        const validacao = novaManutencao.validar();
+        resultDiv.innerHTML = '<p class="text-info">Buscando detalhes...</p>';
 
-        if (validacao.valido) {
-            // Adiciona a manutenção ao veículo (a função já salva e atualiza o display)
-            if (veiculo.adicionarManutencao(novaManutencao)) {
-                 // Limpa o formulário após adicionar com sucesso
-                 form.reset();
+        buscarDetalhesVeiculoAPI(placa) // Chama a função async
+          .then(detalhes => { // Executa quando a promise resolver
+            if (!resultDiv) return; // Segurança se o usuário mudou de tela rápido
+
+            if (detalhes) { // Encontrou dados!
+              let htmlResult = `<h5>Detalhes Extras (Placa: ${placa})</h5>`;
+              htmlResult += '<ul class="list-unstyled">';
+              for (const key in detalhes) {
+                  if (key.toLowerCase() !== 'placa') {
+                       const titulo = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                       htmlResult += `<li><strong>${titulo}:</strong> ${detalhes[key]}</li>`;
+                  }
+              }
+              htmlResult += '</ul>';
+              resultDiv.innerHTML = htmlResult;
+            } else { // Não encontrou ou buscarDetalhesVeiculoAPI retornou null (erro)
+              resultDiv.innerHTML = `<p class="text-warning">Detalhes não encontrados para a placa ${placa}.</p>`;
             }
-        } else {
-            mostrarFeedback(`Erro nos dados da manutenção:\n- ${validacao.erros.join('\n- ')}`, 'error');
-        }
+          })
+          .catch(error => { // Pega erros inesperados na promise (raro aqui)
+             console.error("Erro no .then ou .catch da busca API:", error);
+             if (resultDiv) resultDiv.innerHTML = `<p class="text-danger">Erro ao exibir detalhes.</p>`;
+          });
+      }
+});
+
+
+// Evento: Submissão do Formulário de Manutenção (Delegação)
+mainContent.addEventListener('submit', (e) => {
+    if (e.target.classList.contains('manutencao-form')) {
+        e.preventDefault();
+        // Sua lógica de adicionar manutenção aqui... (mantenha a sua)
+         const form = e.target;
+         if (!veiculoAtual || !garagem[veiculoAtual]) {
+             mostrarFeedback("Selecione um veículo.", 'error'); return;
+         }
+         const veiculo = garagem[veiculoAtual];
+         // ... (pegar dados do form) ...
+         const data = form.querySelector('input[type="datetime-local"]').value;
+         const tipo = form.querySelector('input[placeholder="Tipo"]').value.trim();
+         const custo = form.querySelector('input[type="number"]').value;
+         const descricao = form.querySelector('textarea').value.trim();
+
+         const novaManutencao = new Manutencao(data, tipo, custo, descricao);
+         const validacao = novaManutencao.validar();
+
+         if (validacao.valido) {
+             if (typeof veiculo.adicionarManutencao === 'function') {
+                if (veiculo.adicionarManutencao(novaManutencao)) { // Método deve salvar e atualizar UI
+                    form.reset();
+                }
+             } else {
+                  mostrarFeedback("Função adicionarManutencao não encontrada no veículo.", 'error');
+             }
+         } else {
+            mostrarFeedback(`Dados inválidos:\n- ${validacao.erros.join('\n- ')}`, 'error');
+         }
     }
 });
 
@@ -469,21 +617,29 @@ sidebarMenu.addEventListener('click', (e) => {
 // --- Inicialização ---
 function init() {
     console.log("Iniciando Garagem Inteligente...");
-    carregarGaragem();
-    popularSidebar();
+    carregarGaragem(); // Carrega dados salvos
+    popularSidebar(); // Monta menu lateral
 
-    // Decide o que mostrar inicialmente
+    // Decide o que mostrar primeiro
     if (Object.keys(garagem).length > 0) {
-        // Se houver veículos, mostra o primeiro da lista ordenada
-        const primeiroId = Object.keys(garagem).sort((a, b) => garagem[a].modelo.localeCompare(garagem[b].modelo))[0];
-         mostrarVeiculo(primeiroId);
-       // mostrarWelcome(); // Ou começa sempre com welcome?
+        // Pega a chave do primeiro veículo ordenado por modelo
+        const primeiraChave = Object.keys(garagem).sort((a, b) => garagem[a].modelo.localeCompare(garagem[b].modelo))[0];
+        mostrarVeiculo(primeiraChave);
     } else {
-        // Se a garagem estiver vazia, mostra a mensagem de boas-vindas
-        mostrarWelcome();
+        mostrarWelcome(); // Mostra boas-vindas se garagem vazia
     }
-     console.log("Garagem Inteligente pronta!");
+
+    // Garante estado inicial correto do campo placa no form (escondido e não obrigatório)
+    const placaGroup = addPlacaInput ? addPlacaInput.closest('.form-group') : null;
+     if(placaGroup) placaGroup.style.display = 'none';
+     if (addPlacaInput) {
+         addPlacaInput.required = false;
+         addPlacaInput.disabled = true; // Começa desabilitado
+     }
+
+
+    console.log("Garagem Inteligente pronta!");
 }
 
-// Inicia a aplicação quando o DOM estiver pronto
+// Dispara a inicialização quando o HTML estiver pronto
 document.addEventListener('DOMContentLoaded', init);
