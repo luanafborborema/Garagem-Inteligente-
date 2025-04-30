@@ -70,43 +70,45 @@
 
 
             <!-- Containers dos Veículos (serão controlados via JS/CSS) -->
-            <!-- Mantém a estrutura de cada container como estava antes -->
 
             <!-- =================== Carro Casual =================== -->
-            <div id="carro-container" class="veiculo-container">
+            <div id="carro-container" class="veiculo-container" style="display: none;">
                 <h2>Carro Casual</h2>
                 <img id="carro-img" src="imagens/carro.png" alt="Carro" width="180" class="veiculo-img">
                 <p><strong>Modelo:</strong> <span id="carro-modelo">...</span></p>
                 <p><strong>Cor:</strong> <span id="carro-cor">...</span></p>
                 <p><strong>Status:</strong> <span id="carro-status" class="status-desligado">Desligado</span></p>
                 <p><strong>Velocidade:</strong> <span id="carro-velocidade">0</span> km/h</p>
-                <div class="actions"> <button data-acao="ligar" data-tipo="carro">Ligar</button> <button
-                        data-acao="desligar" data-tipo="carro">Desligar</button> <button data-acao="acelerar"
-                        data-tipo="carro">Acelerar</button> <button data-acao="frear"
-                        data-tipo="carro">Frear</button> <button data-acao="buzinar" data-tipo="carro">Buzinar</button>
+                <div class="actions">
+                    <button data-acao="ligar" data-tipo="carro">Ligar</button>
+                    <button data-acao="desligar" data-tipo="carro">Desligar</button>
+                    <button data-acao="acelerar" data-tipo="carro">Acelerar</button>
+                    <button data-acao="frear" data-tipo="carro">Frear</button>
+                    <button data-acao="buzinar" data-tipo="carro">Buzinar</button>
                 </div>
                 <div class="manutencao-section">
                     <h4>Manutenção</h4>
-                    <div class="manutencao-form">
+                    <form class="manutencao-form" data-tipo="carro">
                         <h5>Registrar/Agendar</h5>
-                        <input type="datetime-local" id="carro-manutencao-data">
-                        <input type="text" id="carro-manutencao-tipo" placeholder="Tipo">
-                        <input type="number" id="carro-manutencao-custo" placeholder="Custo (R$)" min="0">
-                        <textarea id="carro-manutencao-descricao" placeholder="Descrição"></textarea>
-                        <button data-acao="agendarManutencao" data-tipo="carro">Adicionar</button>
-                    </div>
+                        <input type="datetime-local" id="carro-manutencao-data" required>
+                        <input type="text" id="carro-manutencao-tipo" placeholder="Tipo" required>
+                        <input type="number" id="carro-manutencao-custo" placeholder="Custo (R$)" min="0" step="0.01" required>
+                        <textarea id="carro-manutencao-descricao" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" data-acao="agendarManutencao" data-tipo="carro">Adicionar</button>
+                    </form>
                     <div class="manutencao-display">
                         <h5>Histórico</h5>
-                        <ul id="carro-historico-lista"></ul>
+                        <ul id="carro-historico-lista"><li>Nenhum registro.</li></ul>
                     </div>
                     <div class="manutencao-display">
                         <h5>Agendamentos</h5>
-                        <ul id="carro-agendamentos-lista"></ul>
+                        <ul id="carro-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
                     </div>
                 </div>
             </div>
 
             <!-- =================== Carro Esportivo =================== -->
+            <div id="esportivo-container" class="veiculo-container" style="display: none;">
                 <h2>Carro Esportivo</h2>
                 <img id="esportivo-img" src="imagens/cesportivo.png" alt="Esportivo" width="180" class="veiculo-img">
                 <p><strong>Modelo:</strong> <span id="esportivo-modelo">...</span></p>
@@ -114,134 +116,146 @@
                 <p><strong>Status:</strong> <span id="esportivo-status" class="status-desligado">Desligado</span></p>
                 <p><strong>Velocidade:</strong> <span id="esportivo-velocidade">0</span> km/h</p>
                 <p><strong>Turbo:</strong> <span id="esportivo-turbo">Desativado</span></p>
-                <div class="actions"> <button data-acao="ligar" data-tipo="esportivo">Ligar</button> <button
-                        data-acao="desligar" data-tipo="esportivo">Desligar</button> <button data-acao="acelerar"
-                        data-tipo="esportivo">Acelerar</button> <button data-acao="frear"
-                        data-tipo="esportivo">Frear</button> <button data-acao="buzinar"
-                        data-tipo="esportivo">Buzinar</button> <button data-acao="ativarTurbo"
-                        data-tipo="esportivo">Turbo ON</button> <button data-acao="desativarTurbo"
-                        data-tipo="esportivo">Turbo OFF</button> </div>
+                <div class="actions">
+                     <button data-acao="ligar" data-tipo="esportivo">Ligar</button>
+                     <button data-acao="desligar" data-tipo="esportivo">Desligar</button>
+                     <button data-acao="acelerar" data-tipo="esportivo">Acelerar</button>
+                     <button data-acao="frear" data-tipo="esportivo">Frear</button>
+                     <button data-acao="buzinar" data-tipo="esportivo">Buzinar</button>
+                     <button data-acao="ativarTurbo" data-tipo="esportivo">Turbo ON</button>
+                     <button data-acao="desativarTurbo" data-tipo="esportivo">Turbo OFF</button>
+                </div>
                 <div class="manutencao-section">
                     <h4>Manutenção</h4>
-                    <div class="manutencao-form">
+                     <form class="manutencao-form" data-tipo="esportivo">
                         <h5>Registrar/Agendar</h5>
-                        <input type="datetime-local" id="esportivo-manutencao-data">
-                        <input type="text" id="esportivo-manutencao-tipo" placeholder="Tipo">
-                        <input type="number" id="esportivo-manutencao-custo" placeholder="Custo (R$)" min="0">
-                        <textarea id="esportivo-manutencao-descricao" placeholder="Descrição"></textarea>
-                        <button data-acao="agendarManutencao" data-tipo="esportivo">Adicionar</button>
-                    </div>
+                        <input type="datetime-local" id="esportivo-manutencao-data" required>
+                        <input type="text" id="esportivo-manutencao-tipo" placeholder="Tipo" required>
+                        <input type="number" id="esportivo-manutencao-custo" placeholder="Custo (R$)" min="0" step="0.01" required>
+                        <textarea id="esportivo-manutencao-descricao" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" data-acao="agendarManutencao" data-tipo="esportivo">Adicionar</button>
+                    </form>
                     <div class="manutencao-display">
                         <h5>Histórico</h5>
-                        <ul id="esportivo-historico-lista"></ul>
+                        <ul id="esportivo-historico-lista"><li>Nenhum registro.</li></ul>
                     </div>
                     <div class="manutencao-display">
                         <h5>Agendamentos</h5>
-                        <ul id="esportivo-agendamentos-lista"></ul>
+                        <ul id="esportivo-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
                     </div>
                 </div>
             </div>
 
             <!-- =================== Caminhão =================== -->
-            <div id="caminhao-container" class="veiculo-container">
+            <div id="caminhao-container" class="veiculo-container" style="display: none;">
                 <h2>Caminhão</h2>
                 <img id="caminhao-img" src="imagens/caminhao.png" alt="Caminhão" width="180" class="veiculo-img">
                 <p><strong>Modelo:</strong> <span id="caminhao-modelo">...</span></p>
                 <p><strong>Cor:</strong> <span id="caminhao-cor">...</span></p>
                 <p><strong>Status:</strong> <span id="caminhao-status" class="status-desligado">Desligado</span></p>
                 <p><strong>Velocidade:</strong> <span id="caminhao-velocidade">0</span> km/h</p>
-                <p><strong>Carga:</strong> <span id="caminhao-carga">0</span> / <span id="caminhao-capacidade">5000</span> kg
-                </p>
-                <div class="actions"> <button data-acao="ligar" data-tipo="caminhao">Ligar</button> <button
-                        data-acao="desligar" data-tipo="caminhao">Desligar</button> <button data-acao="acelerar"
-                        data-tipo="caminhao">Acelerar</button> <button data-acao="frear"
-                        data-tipo="caminhao">Frear</button> <button data-acao="buzinar"
-                        data-tipo="caminhao">Buzinar</button> <label for="caminhao-carga-input">Carga(kg):</label>
-                    <input type="number" id="caminhao-carga-input" min="0"> <button data-acao="carregar"
-                        data-tipo="caminhao">Carregar</button> </div>
-                <div class="manutencao-section">
+                <p><strong>Carga:</strong> <span id="caminhao-carga">0</span> / <span id="caminhao-capacidade">5000</span> kg</p>
+                <div class="actions">
+                    <button data-acao="ligar" data-tipo="caminhao">Ligar</button>
+                    <button data-acao="desligar" data-tipo="caminhao">Desligar</button>
+                    <button data-acao="acelerar" data-tipo="caminhao">Acelerar</button>
+                    <button data-acao="frear" data-tipo="caminhao">Frear</button>
+                    <button data-acao="buzinar" data-tipo="caminhao">Buzinar</button>
+                    <label for="caminhao-carga-input">Carga(kg):</label>
+                    <input type="number" id="caminhao-carga-input" min="1" step="1">
+                    <button data-acao="carregar" data-tipo="caminhao">Carregar</button>
+                    <button data-acao="descarregar" data-tipo="caminhao">Descarregar</button> <!-- Botão Descarregar -->
+                </div>
+                 <div class="manutencao-section">
                     <h4>Manutenção</h4>
-                    <div class="manutencao-form">
+                     <form class="manutencao-form" data-tipo="caminhao">
                         <h5>Registrar/Agendar</h5>
-                        <input type="datetime-local" id="caminhao-manutencao-data">
-                        <input type="text" id="caminhao-manutencao-tipo" placeholder="Tipo">
-                        <input type="number" id="caminhao-manutencao-custo" placeholder="Custo (R$)" min="0">
-                        <textarea id="caminhao-manutencao-descricao" placeholder="Descrição"></textarea>
-                        <button data-acao="agendarManutencao" data-tipo="caminhao">Adicionar</button>
-                    </div>
+                        <input type="datetime-local" id="caminhao-manutencao-data" required>
+                        <input type="text" id="caminhao-manutencao-tipo" placeholder="Tipo" required>
+                        <input type="number" id="caminhao-manutencao-custo" placeholder="Custo (R$)" min="0" step="0.01" required>
+                        <textarea id="caminhao-manutencao-descricao" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" data-acao="agendarManutencao" data-tipo="caminhao">Adicionar</button>
+                    </form>
                     <div class="manutencao-display">
                         <h5>Histórico</h5>
-                        <ul id="caminhao-historico-lista"></ul>
+                        <ul id="caminhao-historico-lista"><li>Nenhum registro.</li></ul>
                     </div>
                     <div class="manutencao-display">
                         <h5>Agendamentos</h5>
-                        <ul id="caminhao-agendamentos-lista"></ul>
+                        <ul id="caminhao-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
                     </div>
                 </div>
             </div>
 
             <!-- =================== Moto =================== -->
-            <div id="moto-container" class="veiculo-container">
+            <div id="moto-container" class="veiculo-container" style="display: none;">
                 <h2>Moto</h2>
+                <!-- Corrigido caminho da imagem e alt text -->
                 <img id="moto-img" src="imagens/moto.jpg" alt="Moto" width="180" class="veiculo-img">
                 <p><strong>Modelo:</strong> <span id="moto-modelo">...</span></p>
                 <p><strong>Cor:</strong> <span id="moto-cor">...</span></p>
                 <p><strong>Status:</strong> <span id="moto-status" class="status-desligado">Desligado</span></p>
                 <p><strong>Velocidade:</strong> <span id="moto-velocidade">0</span> km/h</p>
-                <div class="actions"> <button data-acao="ligar" data-tipo="moto">Ligar</button> <button
-                        data-acao="desligar" data-tipo="moto">Desligar</button> <button data-acao="acelerar"
-                        data-tipo="moto">Acelerar</button> <button data-acao="frear"
-                        data-tipo="moto">Frear</button> <button data-acao="buzinar" data-tipo="moto">Buzinar</button>
+                <div class="actions">
+                    <button data-acao="ligar" data-tipo="moto">Ligar</button>
+                    <button data-acao="desligar" data-tipo="moto">Desligar</button>
+                    <button data-acao="acelerar" data-tipo="moto">Acelerar</button>
+                    <button data-acao="frear" data-tipo="moto">Frear</button>
+                    <button data-acao="buzinar" data-tipo="moto">Buzinar</button>
                 </div>
-                <div class="manutencao-section">
+                 <div class="manutencao-section">
                     <h4>Manutenção</h4>
-                    <div class="manutencao-form">
+                    <form class="manutencao-form" data-tipo="moto">
                         <h5>Registrar/Agendar</h5>
-                        <input type="datetime-local" id="moto-manutencao-data">
-                        <input type="text" id="moto-manutencao-tipo" placeholder="Tipo">
-                        <input type="number" id="moto-manutencao-custo" placeholder="Custo (R$)" min="0">
-                        <textarea id="moto-manutencao-descricao" placeholder="Descrição"></textarea>
-                        <button data-acao="agendarManutencao" data-tipo="moto">Adicionar</button>
-                    </div>
+                        <input type="datetime-local" id="moto-manutencao-data" required>
+                        <input type="text" id="moto-manutencao-tipo" placeholder="Tipo" required>
+                        <input type="number" id="moto-manutencao-custo" placeholder="Custo (R$)" min="0" step="0.01" required>
+                        <textarea id="moto-manutencao-descricao" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" data-acao="agendarManutencao" data-tipo="moto">Adicionar</button>
+                    </form>
                     <div class="manutencao-display">
                         <h5>Histórico</h5>
-                        <ul id="moto-historico-lista"></ul>
+                        <ul id="moto-historico-lista"><li>Nenhum registro.</li></ul>
                     </div>
                     <div class="manutencao-display">
                         <h5>Agendamentos</h5>
-                        <ul id="moto-agendamentos-lista"></ul>
+                        <ul id="moto-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
                     </div>
                 </div>
             </div>
 
             <!-- =================== Bicicleta =================== -->
-            <div id="bicicleta-container" class="veiculo-container">
+            <div id="bicicleta-container" class="veiculo-container" style="display: none;">
                 <h2>Bicicleta</h2>
+                 <!-- Corrigido caminho da imagem e alt text -->
                 <img id="bicicleta-img" src="imagens/bike.avif" alt="Bicicleta" width="180" class="veiculo-img">
                 <p><strong>Modelo:</strong> <span id="bicicleta-modelo">...</span></p>
                 <p><strong>Cor:</strong> <span id="bicicleta-cor">...</span></p>
                 <p><strong>Status:</strong> <span id="bicicleta-status" class="status-parada">Parada</span></p>
                 <p><strong>Velocidade:</strong> <span id="bicicleta-velocidade">0</span> km/h</p>
-                <div class="actions"> <button data-acao="pedalar" data-tipo="bicicleta">Pedalar</button> <button
-                        data-acao="frear" data-tipo="bicicleta">Frear</button> <button data-acao="buzinar"
-                        data-tipo="bicicleta">Campainha</button> </div>
+                <div class="actions">
+                    <!-- Bicicleta não tem ligar/desligar -->
+                    <button data-acao="pedalar" data-tipo="bicicleta">Pedalar</button>
+                    <button data-acao="frear" data-tipo="bicicleta">Frear</button>
+                    <button data-acao="buzinar" data-tipo="bicicleta">Campainha</button>
+                </div>
                 <div class="manutencao-section">
                     <h4>Manutenção</h4>
-                    <div class="manutencao-form">
+                     <form class="manutencao-form" data-tipo="bicicleta">
                         <h5>Registrar/Agendar</h5>
-                        <input type="datetime-local" id="bicicleta-manutencao-data">
-                        <input type="text" id="bicicleta-manutencao-tipo" placeholder="Tipo">
-                        <input type="number" id="bicicleta-manutencao-custo" placeholder="Custo (R$)" min="0">
-                        <textarea id="bicicleta-manutencao-descricao" placeholder="Descrição"></textarea>
-                        <button data-acao="agendarManutencao" data-tipo="bicicleta">Adicionar</button>
-                    </div>
+                        <input type="datetime-local" id="bicicleta-manutencao-data" required>
+                        <input type="text" id="bicicleta-manutencao-tipo" placeholder="Tipo" required>
+                        <input type="number" id="bicicleta-manutencao-custo" placeholder="Custo (R$)" min="0" step="0.01" required>
+                        <textarea id="bicicleta-manutencao-descricao" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" data-acao="agendarManutencao" data-tipo="bicicleta">Adicionar</button>
+                    </form>
                     <div class="manutencao-display">
                         <h5>Histórico</h5>
-                        <ul id="bicicleta-historico-lista"></ul>
+                        <ul id="bicicleta-historico-lista"><li>Nenhum registro.</li></ul>
                     </div>
                     <div class="manutencao-display">
                         <h5>Agendamentos</h5>
-                        <ul id="bicicleta-agendamentos-lista"></ul>
+                        <ul id="bicicleta-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
                     </div>
                 </div>
             </div>
@@ -254,7 +268,16 @@
         <p>Desenvolvido por Luana Ferreira Borborema | Assistência: AI Studio</p>
     </footer>
 
-    <script src="script.js"></script>
-</body>
+    <!-- Elementos de Áudio (escondidos) -->
+    <!-- Substitua 'caminho/para/som.mp3' pelos nomes reais dos seus arquivos de som -->
+    <audio id="som-ligar" src="sons/ligar.mp3"></audio>
+    <audio id="som-desligar" src="sons/desligar.mp3"></audio>
+    <audio id="som-acelerar" src="sons/acelerar.mp3"></audio>
+    <audio id="som-frear" src="sons/frear.mp3"></audio>
+    <audio id="som-buzina" src="sons/buzina.mp3"></audio>
+    <audio id="som-campainha" src="sons/campainha.mp3"></audio> <!-- Som específico para bike -->
 
+    <!-- Adiciona type="module" para habilitar import/export -->
+    <script src="script.js" type="module"></script>
+</body>
 </html>

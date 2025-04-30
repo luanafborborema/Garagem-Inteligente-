@@ -3,9 +3,8 @@
  * @brief Classe que representa um carro esportivo.
  */
 
-import { Veiculo } from './Veiculo.js'; // ADICIONADO!
-import { Carro } from './Carro.js';
-import { tocarSom, animarVeiculo, atualizarInfoVeiculo, mostrarFeedback, atualizarEstadoBotoes } from './funcoesAuxiliares.js';
+import { Carro } from './Carro.js'; // Importa a classe Carro (que já importa Veiculo)
+import { tocarSom, animarVeiculo, atualizarInfoVeiculo, mostrarFeedback, atualizarEstadoBotoes, atualizarStatusVeiculo } from './funcoesAuxiliares.js'; // Importa helpers
 
 /**
  * @class CarroEsportivo
@@ -17,133 +16,137 @@ export class CarroEsportivo extends Carro {
      * @constructor
      * @param {string} modelo - O modelo do carro esportivo.
      * @param {string} cor - A cor do carro esportivo.
+     * @param {string} [id] - ID opcional (para recarregar).
+     * @param {Array} [historico] - Histórico opcional (para recarregar).
+     * @param {boolean} [turboAtivado=false] - Estado inicial do turbo (para recarregar).
      */
-    constructor(modelo, cor) {
-        super(modelo, cor);
+    constructor(modelo, cor, id = null, historico = [], turboAtivado = false) {
+        super(modelo, cor, id, historico); // Chama o construtor do Carro
         /** @member {boolean} */
-        this.turboAtivado = false;
+        this.turboAtivado = turboAtivado; // Restaura ou inicia como false
+        // Garante que o tipo e prefixo sejam 'esportivo'
+        this._setTipoEIdPrefix(); // Sobrescreve o _setTipoEIdPrefix do Veiculo/Carro se necessário
     }
 
-    /**
-     * @function ativarTurbo
-     * @returns {void}
-     * @description Ativa o turbo do carro esportivo.
-     */
+    // Sobrescreve _setTipoEIdPrefix para garantir 'esportivo'
+    _setTipoEIdPrefix() {
+        this.tipo = 'esportivo';
+        this.idPrefix = 'esportivo';
+    }
+
+
+    /** @description Ativa o turbo do carro esportivo. */
     ativarTurbo() {
         if (!this.ligado) {
-            mostrarFeedback("Ligue o carro!", 'warning');
+            mostrarFeedback("Ligue o carro esportivo antes de ativar o turbo!", 'warning');
             return;
         }
         if (!this.turboAtivado) {
             this.turboAtivado = true;
-            this.atualizarTurbo();
-            mostrarFeedback("Turbo ATIVADO!", 'info');
-            this.atualizarEstadoBotoesWrapper();
+            this.atualizarTurboDisplay(); // Atualiza o display do turbo
+            mostrarFeedback("Turbo ATIVADO! 🔥", 'info');
+            this.atualizarEstadoBotoesWrapper(); // Atualiza botões (desabilita ON, habilita OFF)
+            // Poderia tocar um som de turbo ativando aqui
         } else {
-            mostrarFeedback("Turbo já ativado!", 'warning');
+            mostrarFeedback("O turbo já está ativado!", 'warning');
         }
     }
 
-    /**
-     * @function desativarTurbo
-     * @returns {void}
-     * @description Desativa o turbo do carro esportivo.
-     */
+    /** @description Desativa o turbo do carro esportivo. */
     desativarTurbo() {
         if (this.turboAtivado) {
             this.turboAtivado = false;
-            this.atualizarTurbo();
+            this.atualizarTurboDisplay(); // Atualiza o display do turbo
             mostrarFeedback("Turbo desativado.", 'info');
-            this.atualizarEstadoBotoesWrapper();
+            this.atualizarEstadoBotoesWrapper(); // Atualiza botões (habilita ON, desabilita OFF)
+            // Poderia tocar um som de turbo desativando aqui
         } else {
-            mostrarFeedback("Turbo já desativado!", 'warning');
+            mostrarFeedback("O turbo já está desativado.", 'warning');
         }
     }
 
     /**
-     * @function acelerar
-     * @returns {void}
-     * @description Aumenta a velocidade do carro esportivo, com um bônus se o turbo estiver ativado.
+     * @description Aumenta a velocidade, com bônus se o turbo estiver ativado.
+     * @override
+     * @param {object} sons - O objeto contendo os elementos de áudio.
      */
-    acelerar() {
-        if (!this.acelerarBase()) return;
-        const i = 15 + (this.turboAtivado ? 35 : 0);
-        this.velocidade += i;
-        tocarSom(sons.acelerar, this.turboAtivado ? 0.8 : 0.6);
+    acelerar(sons) {
+        if (!this.acelerarBase()) return; // Verifica se está ligado
+
+        // Aceleração base + bônus do turbo
+        const incremento = 15 + (this.turboAtivado ? 35 : 0);
+        this.velocidade += incremento;
+
+        // Som mais intenso com turbo
+        if (sons && sons.acelerar) tocarSom(sons.acelerar, this.turboAtivado ? 0.8 : 0.6);
         animarVeiculo(this.getIdPrefix(), 'acelerando');
         this.atualizarVelocidade();
         this.atualizarEstadoBotoesWrapper();
     }
 
     /**
-     * @function frear
-     * @returns {void}
-     * @description Diminui a velocidade do carro esportivo.
+     * @description Diminui a velocidade do carro esportivo (freio mais potente).
+     * @override
+     * @param {object} sons - O objeto contendo os elementos de áudio.
      */
-    frear() {
-        if (!this.frearBase()) return;
-        this.velocidade = Math.max(0, this.velocidade - 15);
-        tocarSom(sons.frear, 0.6);
+    frear(sons) {
+        if (!this.frearBase()) return; // Verifica se está em movimento
+
+        this.velocidade = Math.max(0, this.velocidade - 20); // Freio mais forte que o carro normal
+
+        if (sons && sons.frear) tocarSom(sons.frear, 0.6);
         animarVeiculo(this.getIdPrefix(), 'freando');
         this.atualizarVelocidade();
-        if (this.velocidade === 0) this.atualizarStatus();
+
+        if (this.velocidade === 0) {
+            this.atualizarStatus();
+             // Se parar, desativar o turbo automaticamente? (Opcional)
+             // if (this.turboAtivado) this.desativarTurbo();
+        }
         this.atualizarEstadoBotoesWrapper();
     }
 
-    /**
-     * @function atualizarTurbo
-     * @returns {void}
-     * @description Atualiza a exibição do turbo na interface.
-     */
-    atualizarTurbo() {
-        atualizarInfoVeiculo(this.getIdPrefix(), { turbo: this.turboAtivado ? "Ativado" : "Desativado" });
+    /** @description Atualiza a exibição do status do turbo na interface. */
+    atualizarTurboDisplay() {
+        atualizarInfoVeiculo(this.getIdPrefix(), { turbo: this.turboAtivado });
     }
 
     /**
-     * @function desligar
+     * @description Desliga o carro e desativa o turbo se estiver ativo.
      * @override
-     * @returns {void}
-     * @description Desliga o carro esportivo e desativa o turbo, se estiver ativado.
+     * @param {object} sons - O objeto contendo os elementos de áudio.
      */
-    desligar() {
-        super.desligar();
-        if (this.turboAtivado) this.desativarTurbo();
+    desligar(sons) {
+        // Chama o desligar da classe pai (Carro -> Veiculo)
+        super.desligar(sons);
+        // Se o carro foi desligado com sucesso (estava ligado e parado)
+        if (!this.ligado && this.turboAtivado) {
+            this.desativarTurbo(); // Desativa o turbo ao desligar
+        }
+         // Garante que display do turbo está correto ao desligar
+        this.atualizarTurboDisplay();
+        this.atualizarEstadoBotoesWrapper(); // Garante botões atualizados
     }
 
     /**
-     * @function buzinar
+     * @description Toca o som da buzina (pode ser diferente).
      * @override
-     * @returns {void}
-     * @description Toca o som da buzina do carro esportivo.
+     * @param {object} sons - O objeto contendo os elementos de áudio.
      */
-    buzinar() {
-        tocarSom(sons.buzina, 0.7);
+    buzinar(sons) {
+        // Som de buzina mais alto/diferente para esportivo
+        if (sons && sons.buzina) tocarSom(sons.buzina, 0.7);
+        else super.buzinar(sons); // Usa padrão se não houver som específico
     }
 
-    /**
-     * @function atualizarVelocidade
-     * @returns {void}
-     * @description Atualiza a exibição da velocidade do carro na interface.
-     */
-    atualizarVelocidade() {
-        atualizarInfoVeiculo(this.getIdPrefix(), { velocidade: this.velocidade });
-    }
+    // Os métodos atualizarVelocidade e atualizarStatus são herdados e geralmente
+    // suficientes. O atualizarEstadoBotoesWrapper também é herdado.
+    // Precisamos garantir que eles sejam chamados nos momentos certos.
 
-    /**
-     * @function atualizarStatus
-     * @returns {void}
-     * @description Atualiza o status do carro na interface.
-     */
-    atualizarStatus() {
-        atualizarStatusVeiculo(this.getIdPrefix(), this.ligado, this.velocidade);
-    }
-
-    /**
-     * @function atualizarEstadoBotoesWrapper
-     * @returns {void}
-     * @description Wrapper para atualizar o estado dos botões na interface.
-     */
-    atualizarEstadoBotoesWrapper() {
-        atualizarEstadoBotoes(this);
+    // Sobrescreve toJSON para incluir o estado do turbo
+    toJSON() {
+        const data = super.toJSON(); // Pega os dados da classe pai (Carro -> Veiculo)
+        data.turboAtivado = this.turboAtivado; // Adiciona o estado do turbo
+        return data;
     }
 }

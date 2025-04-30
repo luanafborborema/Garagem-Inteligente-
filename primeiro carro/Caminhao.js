@@ -3,9 +3,8 @@
  * @brief Classe que representa um caminhão.
  */
 
-import { Veiculo } from './Veiculo.js'; // ADICIONADO!
-import { Carro } from './Carro.js';
-import { tocarSom, animarVeiculo, atualizarInfoVeiculo, mostrarFeedback, atualizarEstadoBotoes, atualizarStatusVeiculo } from './funcoesAuxiliares.js';
+import { Carro } from './Carro.js'; // Caminhão herda de Carro (que herda de Veiculo)
+import { tocarSom, animarVeiculo, atualizarInfoVeiculo, mostrarFeedback, atualizarEstadoBotoes, atualizarStatusVeiculo } from './funcoesAuxiliares.js'; // Importa helpers
 
 /**
  * @class Caminhao
@@ -18,124 +17,157 @@ export class Caminhao extends Carro {
      * @param {string} modelo - O modelo do caminhão.
      * @param {string} cor - A cor do caminhão.
      * @param {number} [cap=5000] - A capacidade de carga do caminhão em kg.
+     * @param {string} [id] - ID opcional (para recarregar).
+     * @param {Array} [historico] - Histórico opcional (para recarregar).
+     * @param {number} [cargaAtual=0] - Carga atual (para recarregar).
      */
-    constructor(modelo, cor, cap = 5000) {
-        super(modelo, cor);
+    constructor(modelo, cor, cap = 5000, id = null, historico = [], cargaAtual = 0) {
+        super(modelo, cor, id, historico); // Chama construtor do Carro
         /** @member {number} */
-        this.capacidadeCarga = cap;
+        // Garante que a capacidade seja um número não negativo
+        this.capacidadeCarga = Math.max(0, parseInt(cap, 10)) || 5000;
         /** @member {number} */
-        this.cargaAtual = 0;
+        // Garante que a carga atual seja válida e não exceda a capacidade
+        this.cargaAtual = Math.max(0, Math.min(parseFloat(cargaAtual) || 0, this.capacidadeCarga));
+
+        // Garante que o tipo e prefixo sejam 'caminhao'
+        this._setTipoEIdPrefix();
+    }
+
+    // Sobrescreve para garantir tipo/prefixo
+    _setTipoEIdPrefix() {
+        this.tipo = 'caminhao';
+        this.idPrefix = 'caminhao';
     }
 
     /**
-     * @function carregar
-     * @param {number} q - A quantidade de carga a ser carregada em kg.
-     * @returns {boolean} - Retorna true se a carga foi adicionada com sucesso, false caso contrário.
-     * @description Carrega uma quantidade de carga no caminhão.
+     * @param {number|string} quantidade - A quantidade de carga a ser carregada em kg.
+     * @returns {boolean} - True se carregou com sucesso, false caso contrário.
+     * @description Carrega o caminhão, validando a quantidade e capacidade.
      */
-    carregar(q) {
+    carregar(quantidade) {
+        if (!this.ligado) {
+             mostrarFeedback("Ligue o caminhão para operar a carga.", 'warning');
+             return false;
+        }
+        const q = parseFloat(quantidade);
         if (isNaN(q) || q <= 0) {
-            mostrarFeedback("Carga inválida (> 0).", 'error');
+            mostrarFeedback("Quantidade de carga inválida. Informe um número positivo.", 'error');
             return false;
         }
         if (this.cargaAtual + q <= this.capacidadeCarga) {
             this.cargaAtual += q;
-            this.atualizarInfoCaminhao();
-            mostrarFeedback(`Carga atual: ${this.cargaAtual}kg.`, 'success');
-            salvarGaragem();
+            this.atualizarInfoCaminhao(); // Atualiza display de carga/capacidade
+            mostrarFeedback(`Carregado ${q}kg. Carga atual: ${this.cargaAtual}kg.`, 'success');
+            if (typeof window.salvarGaragem === 'function') window.salvarGaragem(); // Salva estado
+             this.atualizarEstadoBotoesWrapper(); // Atualiza botões (ex: descarregar)
             return true;
         } else {
-            mostrarFeedback(`Capacidade ${this.capacidadeCarga}kg excedida!`, 'error');
+            const espacoLivre = this.capacidadeCarga - this.cargaAtual;
+            mostrarFeedback(`Não é possível carregar ${q}kg. Capacidade máxima de ${this.capacidadeCarga}kg excedida. Espaço livre: ${espacoLivre}kg.`, 'error');
             return false;
         }
     }
 
     /**
-     * @function descarregar
-     * @param {number} q - A quantidade de carga a ser descarregada em kg.
-     * @returns {boolean} - Retorna true se a carga foi removida com sucesso, false caso contrário.
-     * @description Descarrega uma quantidade de carga do caminhão.
+     * @param {number|string} quantidade - A quantidade de carga a ser descarregada em kg.
+     * @returns {boolean} - True se descarregou com sucesso, false caso contrário.
+     * @description Descarrega o caminhão, validando a quantidade e carga atual.
      */
-    descarregar(q) { /* TODO */
-        return false;
+    descarregar(quantidade) {
+         if (!this.ligado) {
+             mostrarFeedback("Ligue o caminhão para operar a carga.", 'warning');
+             return false;
+        }
+        const q = parseFloat(quantidade);
+        if (isNaN(q) || q <= 0) {
+            mostrarFeedback("Quantidade a descarregar inválida. Informe um número positivo.", 'error');
+            return false;
+        }
+        if (this.cargaAtual >= q) {
+            this.cargaAtual -= q;
+            this.atualizarInfoCaminhao(); // Atualiza display
+            mostrarFeedback(`Descarregado ${q}kg. Carga restante: ${this.cargaAtual}kg.`, 'success');
+            if (typeof window.salvarGaragem === 'function') window.salvarGaragem(); // Salva estado
+             this.atualizarEstadoBotoesWrapper(); // Atualiza botões (ex: descarregar pode desabilitar)
+            return true;
+        } else {
+            mostrarFeedback(`Não é possível descarregar ${q}kg. Carga atual é de apenas ${this.cargaAtual}kg.`, 'error');
+            return false;
+        }
     }
 
-    /**
-     * @function atualizarInfoCaminhao
-     * @returns {void}
-     * @description Atualiza as informações do caminhão na interface.
-     */
+    /** @description Atualiza os spans de carga e capacidade na interface. */
     atualizarInfoCaminhao() {
-        atualizarInfoVeiculo(this.getIdPrefix(), { carga: this.cargaAtual, capacidade: this.capacidadeCarga });
+        // Usa a função auxiliar, passando os dados específicos do caminhão
+        atualizarInfoVeiculo(this.getIdPrefix(), {
+            carga: this.cargaAtual,
+            capacidade: this.capacidadeCarga
+        });
     }
 
     /**
-     * @function acelerar
+     * @description Acelera o caminhão, com desempenho afetado pela carga.
      * @override
-     * @returns {void}
-     * @description Acelera o caminhão, levando em conta a carga atual.
+     * @param {object} sons - O objeto contendo os elementos de áudio.
      */
-    acelerar() {
-        if (!this.acelerarBase()) return;
-        const f = 1 - (this.cargaAtual / (this.capacidadeCarga * 2));
-        this.velocidade += Math.max(2, 5 * f);
-        tocarSom(sons.acelerar, 0.4);
+    acelerar(sons) {
+        if (!this.acelerarBase()) return; // Verifica se está ligado
+
+        // Fator de desempenho: 1 (vazio) a ~0.5 (carga máxima)
+        const fatorCarga = 1 - (this.cargaAtual / (this.capacidadeCarga * 2));
+        // Aceleração base (menor que carro) * fator de carga
+        const incremento = Math.max(1, 5 * fatorCarga); // Garante pelo menos 1km/h de incremento
+
+        this.velocidade += incremento;
+        if (sons && sons.acelerar) tocarSom(sons.acelerar, 0.4); // Som de motor pesado
         animarVeiculo(this.getIdPrefix(), 'acelerando');
-        this.atualizarVelocidade();
+        this.atualizarVelocidade(); // Atualiza display velocidade
         this.atualizarEstadoBotoesWrapper();
     }
 
     /**
-     * @function frear
+     * @description Freia o caminhão, com eficiência afetada pela carga.
      * @override
-     * @returns {void}
-     * @description Freia o caminhão, levando em conta a carga atual.
+     * @param {object} sons - O objeto contendo os elementos de áudio.
      */
-    frear() {
-        if (!this.frearBase()) return;
-        const f = 1 + (this.cargaAtual / (this.capacidadeCarga * 2));
-        this.velocidade = Math.max(0, this.velocidade - Math.max(3, 7 / f));
-        tocarSom(sons.frear, 0.6);
+    frear(sons) {
+        if (!this.frearBase()) return; // Verifica se está em movimento
+
+        // Fator de frenagem: 1 (vazio) a ~1.5 (carga máxima) - mais difícil frear carregado
+        const fatorCarga = 1 + (this.cargaAtual / (this.capacidadeCarga * 2));
+        // Frenagem base (menor que carro) / fator de carga
+        const decremento = Math.max(2, 7 / fatorCarga); // Freia pelo menos 2km/h
+
+        this.velocidade = Math.max(0, this.velocidade - decremento);
+        if (sons && sons.frear) tocarSom(sons.frear, 0.6); // Som de freio a ar?
         animarVeiculo(this.getIdPrefix(), 'freando');
         this.atualizarVelocidade();
-        if (this.velocidade === 0) this.atualizarStatus();
+
+        if (this.velocidade === 0) {
+            this.atualizarStatus();
+        }
         this.atualizarEstadoBotoesWrapper();
     }
 
     /**
-     * @function buzinar
+     * @description Toca a buzina do caminhão (som mais grave).
      * @override
-     * @returns {void}
-     * @description Toca o som da buzina do caminhão.
+     * @param {object} sons - O objeto contendo os elementos de áudio.
      */
-    buzinar() {
-        tocarSom(sons.buzina, 0.9);
+    buzinar(sons) {
+        if (sons && sons.buzina) tocarSom(sons.buzina, 0.9); // Volume alto
+        else super.buzinar(sons);
     }
 
-    /**
-     * @function atualizarVelocidade
-     * @returns {void}
-     * @description Atualiza a exibição da velocidade do caminhão na interface.
-     */
-    atualizarVelocidade() {
-        atualizarInfoVeiculo(this.getIdPrefix(), { velocidade: this.velocidade });
-    }
+    // Os métodos atualizarVelocidade e atualizarStatus são herdados.
+    // O método atualizarInfoCaminhao cuida da parte de carga/capacidade.
 
-    /**
-     * @function atualizarStatus
-     * @returns {void}
-     * @description Atualiza o status do caminhão na interface.
-     */
-    atualizarStatus() {
-        atualizarStatusVeiculo(this.getIdPrefix(), this.ligado, this.velocidade);
-    }
-
-    /**
-     * @function atualizarEstadoBotoesWrapper
-     * @returns {void}
-     * @description Wrapper para atualizar o estado dos botões na interface.
-     */
-    atualizarEstadoBotoesWrapper() {
-        atualizarEstadoBotoes(this);
+    // Sobrescreve toJSON para incluir carga e capacidade
+    toJSON() {
+        const data = super.toJSON(); // Pega dados do Carro -> Veiculo
+        data.capacidadeCarga = this.capacidadeCarga;
+        data.cargaAtual = this.cargaAtual;
+        return data;
     }
 }

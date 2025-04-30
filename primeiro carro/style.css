@@ -102,7 +102,11 @@ body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Ro
 .manutencao-display ul { list-style: none; padding-left: 0; margin-top: 0; max-height: 180px; overflow-y: auto; border: 1px solid #e9ecef; padding: 15px; background-color: #fff; border-radius: 4px; }
 .manutencao-display ul li { padding: 8px 5px; font-size: 0.9em; color: #495057; border-bottom: 1px dashed #e9ecef; }
 .manutencao-display ul li:empty { display: none; } .manutencao-display ul li:last-child { border-bottom: none; }
+/* ... (seu CSS existente aqui) ... */
 
 /* Rodapé */
 footer { background-color: #e9ecef; color: #6c757d; text-align: center; padding: 15px 0; margin-top: auto; border-top: 1px solid #dee2e6; width: 100%; font-size: 0.85em; }
 footer p { margin: 0; }
+
+/* Esconder elementos de áudio */
+audio { display: none; }
