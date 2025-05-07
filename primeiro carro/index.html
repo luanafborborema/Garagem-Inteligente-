@@ -5,30 +5,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Garagem Inteligente Unificada</title>
-    <!-- Adicionei um link básico para Bootstrap apenas para o botão parecer melhor, é opcional -->
+    <!-- Adicionado link para Bootstrap apenas para alguns estilos de form, é opcional -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <!-- Estilos específicos para a previsão do tempo podem estar em style.css ou aqui -->
     <style>
-        /* Estilos adicionais para os detalhes da API */
-        .api-details-section {
-            margin-top: 15px;
-            padding-top: 10px;
+        /* Seus estilos de style.css já devem cobrir isso, mas para garantir: */
+        .api-details-section { /* Classe reutilizada para a seção de previsão */
+            margin-top: 20px;
+            padding-top: 15px;
             border-top: 1px solid #eee;
         }
-        .api-details-result {
+        .previsao-tempo-resultado {
             margin-top: 10px;
             border: 1px dashed #ccc;
             padding: 10px;
-            min-height: 50px;
+            min-height: 100px;
             background-color: #f9f9f9;
         }
-        .api-details-result ul {
-            list-style: none;
-            padding-left: 0;
+        .previsao-tempo-resultado ul { list-style: none; padding-left: 0; }
+        .previsao-tempo-resultado li { margin-bottom: 5px; }
+
+        /* Estilos para a previsão de 5 dias (do CSS que montamos antes) */
+        .previsao-dias-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: space-around;
         }
-         .api-details-result li {
-            margin-bottom: 5px;
+        .dia-previsao {
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #fff;
+            text-align: center;
+            min-width: 120px;
+            flex-basis: 150px;
+            flex-grow: 1;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
+        .dia-previsao img {
+            width: 50px;
+            height: 50px;
+            background-color: #e0f7fa; /* Fundo para ícones caso sejam transparentes */
+            border-radius: 50%;
+        }
+        .dia-previsao h6 { margin: 5px 0; font-size: 0.9em; color: #333; }
+        .dia-previsao p { margin: 3px 0; font-size: 0.85em; }
+        .temperaturas { font-weight: bold; }
+        .temp-max { color: #e53935; }
+        .temp-min { color: #1e88e5; }
+        .descricao-tempo { font-size: 0.8em; color: #555; }
     </style>
 </head>
 
@@ -48,7 +75,7 @@
 
         <!-- Área de Conteúdo Principal -->
         <main id="main-content">
-            <!-- Área para exibir mensagens de feedback (substitui alerts) -->
+            <!-- Área para exibir mensagens de feedback -->
             <div id="feedback-message" class="feedback" style="display: none;"></div>
 
             <!-- Mensagem inicial -->
@@ -63,7 +90,7 @@
                 <form id="add-veiculo-form">
                     <div class="form-group">
                         <label for="add-tipo">Tipo de Veículo:</label>
-                        <select id="add-tipo" name="tipo" required>
+                        <select id="add-tipo" name="tipo" class="form-select" required>
                             <option value="" disabled selected>Selecione...</option>
                             <option value="carro">Carro Casual</option>
                             <option value="esportivo">Carro Esportivo</option>
@@ -74,55 +101,55 @@
                     </div>
                     <div class="form-group">
                         <label for="add-modelo">Modelo:</label>
-                        <input type="text" id="add-modelo" name="modelo" placeholder="Ex: Fusca Azul" required>
+                        <input type="text" id="add-modelo" name="modelo" class="form-control" placeholder="Ex: Fusca Azul" required>
                     </div>
-                     <div class="form-group">
-                        <label for="add-placa">Placa:</label> <!-- Adicionado Campo Placa -->
-                        <input type="text" id="add-placa" name="placa" placeholder="Ex: ABC1234" required>
+                     <div class="form-group"> <!-- Campo Placa sempre presente no HTML, JS controla visibilidade/obrigatoriedade -->
+                        <label for="add-placa">Placa:</label>
+                        <input type="text" id="add-placa" name="placa" class="form-control" placeholder="Ex: ABC1234">
                     </div>
                     <div class="form-group">
                         <label for="add-cor">Cor:</label>
-                        <input type="text" id="add-cor" name="cor" placeholder="Ex: Azul Metálico" required>
+                        <input type="text" id="add-cor" name="cor" class="form-control" placeholder="Ex: Azul Metálico" required>
                     </div>
                     <!-- Campo específico para Caminhão (aparece condicionalmente) -->
                     <div id="add-caminhao-capacidade-group" class="form-group" style="display: none;">
                         <label for="add-capacidade">Capacidade Carga (kg):</label>
-                        <input type="number" id="add-capacidade" name="capacidade" placeholder="Ex: 5000" min="0"
-                            step="100">
+                        <input type="number" id="add-capacidade" name="capacidade" class="form-control" placeholder="Ex: 5000" min="0" step="100">
                     </div>
 
-                    <button type="submit">Salvar Novo Veículo</button>
-                    <button type="button" id="cancel-add-veiculo">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Salvar Novo Veículo</button>
+                    <button type="button" id="cancel-add-veiculo" class="btn btn-secondary">Cancelar</button>
                 </form>
             </div>
 
-
-            <!-- Containers dos Veículos (serão controlados via JS/CSS) -->
 
             <!-- =================== Carro Casual =================== -->
             <div id="carro-container" class="veiculo-container" style="display: none;">
                 <h2>Carro Casual</h2>
                 <img id="carro-img" src="imagens/carro.png" alt="Carro" width="180" class="veiculo-img">
                 <p><strong>Modelo:</strong> <span id="carro-modelo">...</span></p>
-                <p><strong>Placa:</strong> <span id="carro-placa">...</span></p> <!-- Mostrar Placa -->
+                <p><strong>Placa:</strong> <span id="carro-placa">...</span></p>
                 <p><strong>Cor:</strong> <span id="carro-cor">...</span></p>
                 <p><strong>Status:</strong> <span id="carro-status" class="status-desligado">Desligado</span></p>
                 <p><strong>Velocidade:</strong> <span id="carro-velocidade">0</span> km/h</p>
                 <div class="actions">
-                    <button data-acao="ligar" data-tipo="carro">Ligar</button>
-                    <button data-acao="desligar" data-tipo="carro">Desligar</button>
-                    <button data-acao="acelerar" data-tipo="carro">Acelerar</button>
-                    <button data-acao="frear" data-tipo="carro">Frear</button>
-                    <button data-acao="buzinar" data-tipo="carro">Buzinar</button>
+                    <button data-acao="ligar" data-tipo="carro" class="btn btn-sm btn-success">Ligar</button>
+                    <button data-acao="desligar" data-tipo="carro" class="btn btn-sm btn-danger">Desligar</button>
+                    <button data-acao="acelerar" data-tipo="carro" class="btn btn-sm btn-info">Acelerar</button>
+                    <button data-acao="frear" data-tipo="carro" class="btn btn-sm btn-warning">Frear</button>
+                    <button data-acao="buzinar" data-tipo="carro" class="btn btn-sm btn-secondary">Buzinar</button>
                 </div>
 
-                <!-- Seção de Detalhes da API -->
+                <!-- Seção de Previsão do Tempo -->
                 <div class="api-details-section">
-                    <h5>Detalhes Externos</h5>
-                    <button class="btn btn-info btn-sm details-api-btn">Ver Detalhes Extras (API)</button>
-                    <div class="api-details-result">
-                        <!-- Os detalhes da API serão exibidos aqui -->
-                         <p class="text-muted">Clique no botão para buscar detalhes.</p>
+                    <h5>Previsão do Tempo para <span id="nome-cidade-previsao-carro">[Cidade]</span></h5>
+                    <div class="form-group mb-2">
+                        <label for="cidade-previsao-input-carro" class="form-label">Cidade:</label>
+                        <input type="text" id="cidade-previsao-input-carro" class="form-control form-control-sm" placeholder="Ex: São Paulo">
+                    </div>
+                    <button id="verificar-clima-btn-carro" class="btn btn-primary btn-sm verificar-clima-btn-veiculo" data-veiculo-tipo="carro">Ver Previsão 5 Dias</button>
+                    <div id="previsao-tempo-resultado-carro" class="previsao-tempo-resultado">
+                        <p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>
                     </div>
                 </div>
 
@@ -130,11 +157,11 @@
                     <h4>Manutenção</h4>
                     <form class="manutencao-form" data-tipo="carro">
                         <h5>Registrar/Agendar</h5>
-                        <input type="datetime-local" id="carro-manutencao-data" required>
-                        <input type="text" id="carro-manutencao-tipo" placeholder="Tipo" required>
-                        <input type="number" id="carro-manutencao-custo" placeholder="Custo (R$)" min="0" step="0.01" required>
-                        <textarea id="carro-manutencao-descricao" placeholder="Descrição (Opcional)"></textarea>
-                        <button type="submit" data-acao="agendarManutencao" data-tipo="carro">Adicionar</button>
+                        <input type="datetime-local" id="carro-manutencao-data" class="form-control mb-2" required>
+                        <input type="text" id="carro-manutencao-tipo" class="form-control mb-2" placeholder="Tipo" required>
+                        <input type="number" id="carro-manutencao-custo" class="form-control mb-2" placeholder="Custo (R$)" min="0" step="0.01" required>
+                        <textarea id="carro-manutencao-descricao" class="form-control mb-2" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" data-acao="agendarManutencao" data-tipo="carro" class="btn btn-sm btn-outline-success">Adicionar Manutenção</button>
                     </form>
                     <div class="manutencao-display">
                         <h5>Histórico</h5>
@@ -152,27 +179,31 @@
                 <h2>Carro Esportivo</h2>
                 <img id="esportivo-img" src="imagens/cesportivo.png" alt="Esportivo" width="180" class="veiculo-img">
                 <p><strong>Modelo:</strong> <span id="esportivo-modelo">...</span></p>
-                <p><strong>Placa:</strong> <span id="esportivo-placa">...</span></p> <!-- Mostrar Placa -->
+                <p><strong>Placa:</strong> <span id="esportivo-placa">...</span></p>
                 <p><strong>Cor:</strong> <span id="esportivo-cor">...</span></p>
                 <p><strong>Status:</strong> <span id="esportivo-status" class="status-desligado">Desligado</span></p>
                 <p><strong>Velocidade:</strong> <span id="esportivo-velocidade">0</span> km/h</p>
                 <p><strong>Turbo:</strong> <span id="esportivo-turbo">Desativado</span></p>
                 <div class="actions">
-                     <button data-acao="ligar" data-tipo="esportivo">Ligar</button>
-                     <button data-acao="desligar" data-tipo="esportivo">Desligar</button>
-                     <button data-acao="acelerar" data-tipo="esportivo">Acelerar</button>
-                     <button data-acao="frear" data-tipo="esportivo">Frear</button>
-                     <button data-acao="buzinar" data-tipo="esportivo">Buzinar</button>
-                     <button data-acao="ativarTurbo" data-tipo="esportivo">Turbo ON</button>
-                     <button data-acao="desativarTurbo" data-tipo="esportivo">Turbo OFF</button>
+                     <button data-acao="ligar" data-tipo="esportivo" class="btn btn-sm btn-success">Ligar</button>
+                     <button data-acao="desligar" data-tipo="esportivo" class="btn btn-sm btn-danger">Desligar</button>
+                     <button data-acao="acelerar" data-tipo="esportivo" class="btn btn-sm btn-info">Acelerar</button>
+                     <button data-acao="frear" data-tipo="esportivo" class="btn btn-sm btn-warning">Frear</button>
+                     <button data-acao="buzinar" data-tipo="esportivo" class="btn btn-sm btn-secondary">Buzinar</button>
+                     <button data-acao="ativarTurbo" data-tipo="esportivo" class="btn btn-sm btn-warning">Turbo ON</button>
+                     <button data-acao="desativarTurbo" data-tipo="esportivo" class="btn btn-sm btn-outline-warning">Turbo OFF</button>
                 </div>
 
-                <!-- Seção de Detalhes da API -->
+                <!-- Seção de Previsão do Tempo -->
                 <div class="api-details-section">
-                    <h5>Detalhes Externos</h5>
-                    <button class="btn btn-info btn-sm details-api-btn">Ver Detalhes Extras (API)</button>
-                    <div class="api-details-result">
-                         <p class="text-muted">Clique no botão para buscar detalhes.</p>
+                    <h5>Previsão do Tempo para <span id="nome-cidade-previsao-esportivo">[Cidade]</span></h5>
+                    <div class="form-group mb-2">
+                        <label for="cidade-previsao-input-esportivo" class="form-label">Cidade:</label>
+                        <input type="text" id="cidade-previsao-input-esportivo" class="form-control form-control-sm" placeholder="Ex: Curitiba">
+                    </div>
+                    <button id="verificar-clima-btn-esportivo" class="btn btn-primary btn-sm verificar-clima-btn-veiculo" data-veiculo-tipo="esportivo">Ver Previsão 5 Dias</button>
+                    <div id="previsao-tempo-resultado-esportivo" class="previsao-tempo-resultado">
+                        <p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>
                     </div>
                 </div>
 
@@ -180,11 +211,11 @@
                     <h4>Manutenção</h4>
                      <form class="manutencao-form" data-tipo="esportivo">
                         <h5>Registrar/Agendar</h5>
-                        <input type="datetime-local" id="esportivo-manutencao-data" required>
-                        <input type="text" id="esportivo-manutencao-tipo" placeholder="Tipo" required>
-                        <input type="number" id="esportivo-manutencao-custo" placeholder="Custo (R$)" min="0" step="0.01" required>
-                        <textarea id="esportivo-manutencao-descricao" placeholder="Descrição (Opcional)"></textarea>
-                        <button type="submit" data-acao="agendarManutencao" data-tipo="esportivo">Adicionar</button>
+                        <input type="datetime-local" id="esportivo-manutencao-data" class="form-control mb-2" required>
+                        <input type="text" id="esportivo-manutencao-tipo" class="form-control mb-2" placeholder="Tipo" required>
+                        <input type="number" id="esportivo-manutencao-custo" class="form-control mb-2" placeholder="Custo (R$)" min="0" step="0.01" required>
+                        <textarea id="esportivo-manutencao-descricao" class="form-control mb-2" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" data-acao="agendarManutencao" data-tipo="esportivo" class="btn btn-sm btn-outline-success">Adicionar Manutenção</button>
                     </form>
                     <div class="manutencao-display">
                         <h5>Histórico</h5>
@@ -202,29 +233,33 @@
                 <h2>Caminhão</h2>
                 <img id="caminhao-img" src="imagens/caminhao.png" alt="Caminhão" width="180" class="veiculo-img">
                 <p><strong>Modelo:</strong> <span id="caminhao-modelo">...</span></p>
-                 <p><strong>Placa:</strong> <span id="caminhao-placa">...</span></p> <!-- Mostrar Placa -->
+                 <p><strong>Placa:</strong> <span id="caminhao-placa">...</span></p>
                 <p><strong>Cor:</strong> <span id="caminhao-cor">...</span></p>
                 <p><strong>Status:</strong> <span id="caminhao-status" class="status-desligado">Desligado</span></p>
                 <p><strong>Velocidade:</strong> <span id="caminhao-velocidade">0</span> km/h</p>
                 <p><strong>Carga:</strong> <span id="caminhao-carga">0</span> / <span id="caminhao-capacidade">5000</span> kg</p>
                 <div class="actions">
-                    <button data-acao="ligar" data-tipo="caminhao">Ligar</button>
-                    <button data-acao="desligar" data-tipo="caminhao">Desligar</button>
-                    <button data-acao="acelerar" data-tipo="caminhao">Acelerar</button>
-                    <button data-acao="frear" data-tipo="caminhao">Frear</button>
-                    <button data-acao="buzinar" data-tipo="caminhao">Buzinar</button>
+                    <button data-acao="ligar" data-tipo="caminhao" class="btn btn-sm btn-success">Ligar</button>
+                    <button data-acao="desligar" data-tipo="caminhao" class="btn btn-sm btn-danger">Desligar</button>
+                    <button data-acao="acelerar" data-tipo="caminhao" class="btn btn-sm btn-info">Acelerar</button>
+                    <button data-acao="frear" data-tipo="caminhao" class="btn btn-sm btn-warning">Frear</button>
+                    <button data-acao="buzinar" data-tipo="caminhao" class="btn btn-sm btn-secondary">Buzinar</button>
                     <label for="caminhao-carga-input">Carga(kg):</label>
-                    <input type="number" id="caminhao-carga-input" min="1" step="1">
-                    <button data-acao="carregar" data-tipo="caminhao">Carregar</button>
-                    <button data-acao="descarregar" data-tipo="caminhao">Descarregar</button> <!-- Botão Descarregar -->
+                    <input type="number" id="caminhao-carga-input" class="form-control form-control-sm d-inline-block" style="width: 100px;" min="1" step="1">
+                    <button data-acao="carregar" data-tipo="caminhao" class="btn btn-sm btn-outline-primary">Carregar</button>
+                    <button data-acao="descarregar" data-tipo="caminhao" class="btn btn-sm btn-outline-info">Descarregar</button>
                 </div>
 
-                <!-- Seção de Detalhes da API -->
+                <!-- Seção de Previsão do Tempo -->
                 <div class="api-details-section">
-                    <h5>Detalhes Externos</h5>
-                    <button class="btn btn-info btn-sm details-api-btn">Ver Detalhes Extras (API)</button>
-                    <div class="api-details-result">
-                         <p class="text-muted">Clique no botão para buscar detalhes.</p>
+                    <h5>Previsão do Tempo para <span id="nome-cidade-previsao-caminhao">[Cidade]</span></h5>
+                    <div class="form-group mb-2">
+                        <label for="cidade-previsao-input-caminhao" class="form-label">Cidade:</label>
+                        <input type="text" id="cidade-previsao-input-caminhao" class="form-control form-control-sm" placeholder="Ex: Salvador">
+                    </div>
+                    <button id="verificar-clima-btn-caminhao" class="btn btn-primary btn-sm verificar-clima-btn-veiculo" data-veiculo-tipo="caminhao">Ver Previsão 5 Dias</button>
+                    <div id="previsao-tempo-resultado-caminhao" class="previsao-tempo-resultado">
+                        <p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>
                     </div>
                 </div>
 
@@ -232,11 +267,11 @@
                     <h4>Manutenção</h4>
                      <form class="manutencao-form" data-tipo="caminhao">
                         <h5>Registrar/Agendar</h5>
-                        <input type="datetime-local" id="caminhao-manutencao-data" required>
-                        <input type="text" id="caminhao-manutencao-tipo" placeholder="Tipo" required>
-                        <input type="number" id="caminhao-manutencao-custo" placeholder="Custo (R$)" min="0" step="0.01" required>
-                        <textarea id="caminhao-manutencao-descricao" placeholder="Descrição (Opcional)"></textarea>
-                        <button type="submit" data-acao="agendarManutencao" data-tipo="caminhao">Adicionar</button>
+                        <input type="datetime-local" id="caminhao-manutencao-data" class="form-control mb-2" required>
+                        <input type="text" id="caminhao-manutencao-tipo" class="form-control mb-2" placeholder="Tipo" required>
+                        <input type="number" id="caminhao-manutencao-custo" class="form-control mb-2" placeholder="Custo (R$)" min="0" step="0.01" required>
+                        <textarea id="caminhao-manutencao-descricao" class="form-control mb-2" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" data-acao="agendarManutencao" data-tipo="caminhao" class="btn btn-sm btn-outline-success">Adicionar Manutenção</button>
                     </form>
                     <div class="manutencao-display">
                         <h5>Histórico</h5>
@@ -252,27 +287,30 @@
             <!-- =================== Moto =================== -->
             <div id="moto-container" class="veiculo-container" style="display: none;">
                 <h2>Moto</h2>
-                <!-- Corrigido caminho da imagem e alt text -->
                 <img id="moto-img" src="imagens/moto.jpg" alt="Moto" width="180" class="veiculo-img">
                 <p><strong>Modelo:</strong> <span id="moto-modelo">...</span></p>
-                <p><strong>Placa:</strong> <span id="moto-placa">...</span></p> <!-- Mostrar Placa -->
+                <p><strong>Placa:</strong> <span id="moto-placa">...</span></p>
                 <p><strong>Cor:</strong> <span id="moto-cor">...</span></p>
                 <p><strong>Status:</strong> <span id="moto-status" class="status-desligado">Desligado</span></p>
                 <p><strong>Velocidade:</strong> <span id="moto-velocidade">0</span> km/h</p>
                 <div class="actions">
-                    <button data-acao="ligar" data-tipo="moto">Ligar</button>
-                    <button data-acao="desligar" data-tipo="moto">Desligar</button>
-                    <button data-acao="acelerar" data-tipo="moto">Acelerar</button>
-                    <button data-acao="frear" data-tipo="moto">Frear</button>
-                    <button data-acao="buzinar" data-tipo="moto">Buzinar</button>
+                    <button data-acao="ligar" data-tipo="moto" class="btn btn-sm btn-success">Ligar</button>
+                    <button data-acao="desligar" data-tipo="moto" class="btn btn-sm btn-danger">Desligar</button>
+                    <button data-acao="acelerar" data-tipo="moto" class="btn btn-sm btn-info">Acelerar</button>
+                    <button data-acao="frear" data-tipo="moto" class="btn btn-sm btn-warning">Frear</button>
+                    <button data-acao="buzinar" data-tipo="moto" class="btn btn-sm btn-secondary">Buzinar</button>
                 </div>
 
-                 <!-- Seção de Detalhes da API -->
+                 <!-- Seção de Previsão do Tempo -->
                 <div class="api-details-section">
-                    <h5>Detalhes Externos</h5>
-                    <button class="btn btn-info btn-sm details-api-btn">Ver Detalhes Extras (API)</button>
-                    <div class="api-details-result">
-                         <p class="text-muted">Clique no botão para buscar detalhes.</p>
+                    <h5>Previsão do Tempo para <span id="nome-cidade-previsao-moto">[Cidade]</span></h5>
+                    <div class="form-group mb-2">
+                        <label for="cidade-previsao-input-moto" class="form-label">Cidade:</label>
+                        <input type="text" id="cidade-previsao-input-moto" class="form-control form-control-sm" placeholder="Ex: Manaus">
+                    </div>
+                    <button id="verificar-clima-btn-moto" class="btn btn-primary btn-sm verificar-clima-btn-veiculo" data-veiculo-tipo="moto">Ver Previsão 5 Dias</button>
+                    <div id="previsao-tempo-resultado-moto" class="previsao-tempo-resultado">
+                        <p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>
                     </div>
                 </div>
 
@@ -280,11 +318,11 @@
                     <h4>Manutenção</h4>
                     <form class="manutencao-form" data-tipo="moto">
                         <h5>Registrar/Agendar</h5>
-                        <input type="datetime-local" id="moto-manutencao-data" required>
-                        <input type="text" id="moto-manutencao-tipo" placeholder="Tipo" required>
-                        <input type="number" id="moto-manutencao-custo" placeholder="Custo (R$)" min="0" step="0.01" required>
-                        <textarea id="moto-manutencao-descricao" placeholder="Descrição (Opcional)"></textarea>
-                        <button type="submit" data-acao="agendarManutencao" data-tipo="moto">Adicionar</button>
+                        <input type="datetime-local" id="moto-manutencao-data" class="form-control mb-2" required>
+                        <input type="text" id="moto-manutencao-tipo" class="form-control mb-2" placeholder="Tipo" required>
+                        <input type="number" id="moto-manutencao-custo" class="form-control mb-2" placeholder="Custo (R$)" min="0" step="0.01" required>
+                        <textarea id="moto-manutencao-descricao" class="form-control mb-2" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" data-acao="agendarManutencao" data-tipo="moto" class="btn btn-sm btn-outline-success">Adicionar Manutenção</button>
                     </form>
                     <div class="manutencao-display">
                         <h5>Histórico</h5>
@@ -298,29 +336,31 @@
             </div>
 
             <!-- =================== Bicicleta =================== -->
+            <!-- Corrigido o fechamento da div que estava faltando aqui -->
             <div id="bicicleta-container" class="veiculo-container" style="display: none;">
-                  </div> <!-- TAG DIV PERDIDA AQUI -->
                 <h2>Bicicleta</h2>
-                 <!-- Corrigido caminho da imagem e alt text -->
                 <img id="bicicleta-img" src="imagens/bike.avif" alt="Bicicleta" width="180" class="veiculo-img">
                 <p><strong>Modelo:</strong> <span id="bicicleta-modelo">...</span></p>
-                <p><strong>Placa:</strong> <span id="bicicleta-placa">N/A</span></p> <!-- Bicicleta não tem placa -->
+                <p><strong>Placa:</strong> <span id="bicicleta-placa">N/A</span></p>
                 <p><strong>Cor:</strong> <span id="bicicleta-cor">...</span></p>
                 <p><strong>Status:</strong> <span id="bicicleta-status" class="status-parada">Parada</span></p>
                 <p><strong>Velocidade:</strong> <span id="bicicleta-velocidade">0</span> km/h</p>
                 <div class="actions">
-                    <!-- Bicicleta não tem ligar/desligar -->
-                    <button data-acao="pedalar" data-tipo="bicicleta">Pedalar</button>
-                    <button data-acao="frear" data-tipo="bicicleta">Frear</button>
-                    <button data-acao="buzinar" data-tipo="bicicleta">Campainha</button>
+                    <button data-acao="pedalar" data-tipo="bicicleta" class="btn btn-sm btn-info">Pedalar</button>
+                    <button data-acao="frear" data-tipo="bicicleta" class="btn btn-sm btn-warning">Frear</button>
+                    <button data-acao="buzinar" data-tipo="bicicleta" class="btn btn-sm btn-secondary">Campainha</button>
                 </div>
 
-                 <!-- Seção de Detalhes da API (Bicicleta pode não ter dados na API simulada, mas deixamos a estrutura) -->
+                 <!-- Seção de Previsão do Tempo (Bicicleta também pode ter) -->
                 <div class="api-details-section">
-                    <h5>Detalhes Externos</h5>
-                    <button class="btn btn-info btn-sm details-api-btn">Ver Detalhes Extras (API)</button>
-                    <div class="api-details-result">
-                         <p class="text-muted">Clique no botão para buscar detalhes.</p>
+                    <h5>Previsão do Tempo para <span id="nome-cidade-previsao-bicicleta">[Cidade]</span></h5>
+                     <div class="form-group mb-2">
+                        <label for="cidade-previsao-input-bicicleta" class="form-label">Cidade:</label>
+                        <input type="text" id="cidade-previsao-input-bicicleta" class="form-control form-control-sm" placeholder="Ex: Rio de Janeiro">
+                    </div>
+                    <button id="verificar-clima-btn-bicicleta" class="btn btn-primary btn-sm verificar-clima-btn-veiculo" data-veiculo-tipo="bicicleta">Ver Previsão 5 Dias</button>
+                    <div id="previsao-tempo-resultado-bicicleta" class="previsao-tempo-resultado">
+                         <p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>
                     </div>
                 </div>
 
@@ -328,11 +368,11 @@
                     <h4>Manutenção</h4>
                      <form class="manutencao-form" data-tipo="bicicleta">
                         <h5>Registrar/Agendar</h5>
-                        <input type="datetime-local" id="bicicleta-manutencao-data" required>
-                        <input type="text" id="bicicleta-manutencao-tipo" placeholder="Tipo" required>
-                        <input type="number" id="bicicleta-manutencao-custo" placeholder="Custo (R$)" min="0" step="0.01" required>
-                        <textarea id="bicicleta-manutencao-descricao" placeholder="Descrição (Opcional)"></textarea>
-                        <button type="submit" data-acao="agendarManutencao" data-tipo="bicicleta">Adicionar</button>
+                        <input type="datetime-local" id="bicicleta-manutencao-data" class="form-control mb-2" required>
+                        <input type="text" id="bicicleta-manutencao-tipo" class="form-control mb-2" placeholder="Tipo" required>
+                        <input type="number" id="bicicleta-manutencao-custo" class="form-control mb-2" placeholder="Custo (R$)" min="0" step="0.01" required>
+                        <textarea id="bicicleta-manutencao-descricao" class="form-control mb-2" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" data-acao="agendarManutencao" data-tipo="bicicleta" class="btn btn-sm btn-outline-success">Adicionar Manutenção</button>
                     </form>
                     <div class="manutencao-display">
                         <h5>Histórico</h5>
@@ -343,7 +383,7 @@
                         <ul id="bicicleta-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
                     </div>
                 </div>
-            </div>
+            </div> <!-- Fim #bicicleta-container -->
 
         </main> <!-- Fim #main-content -->
 
@@ -354,16 +394,14 @@
     </footer>
 
     <!-- Elementos de Áudio (escondidos) -->
-    <!-- Substitua 'caminho/para/som.mp3' pelos nomes reais dos seus arquivos de som -->
     <audio id="som-ligar" src="sons/ligar.mp3"></audio>
     <audio id="som-desligar" src="sons/desligar.mp3"></audio>
     <audio id="som-acelerar" src="sons/acelerar.mp3"></audio>
     <audio id="som-frear" src="sons/frear.mp3"></audio>
     <audio id="som-buzina" src="sons/buzina.mp3"></audio>
-    <audio id="som-campainha" src="sons/campainha.mp3"></audio> <!-- Som específico para bike -->
+    <audio id="som-campainha" src="sons/campainha.mp3"></audio>
 
     <!-- Script principal -->
-    <!-- Use type="module" se estiver usando imports/exports no seu script.js -->
     <script src="script.js" type="module"></script>
 </body>
 </html>
