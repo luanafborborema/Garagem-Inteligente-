@@ -110,3 +110,90 @@ footer p { margin: 0; }
 
 /* Esconder elementos de áudio */
 audio { display: none; }
+
+
+.api-details-section { /* Classe reutilizada para a seção de previsão */
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+.previsao-tempo-resultado {
+    margin-top: 10px;
+    border: 1px dashed #ccc;
+    padding: 10px;
+    min-height: 100px;
+    background-color: #f9f9f9;
+}
+.previsao-tempo-resultado ul { list-style: none; padding-left: 0; }
+.previsao-tempo-resultado li { margin-bottom: 5px; }
+
+/* Estilos para a previsão de 5 dias */
+.previsao-dias-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-around; /* Ou space-between, flex-start */
+    margin-top: 10px; /* Espaço acima dos cards de dia */
+}
+.dia-previsao {
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #fff;
+    text-align: center;
+    min-width: 110px; /* Ajuste conforme necessário */
+    flex-basis: 140px; /* Ajuste conforme necessário */
+    flex-grow: 1;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease, border-left 0.3s ease; /* Para transições suaves no destaque */
+}
+.dia-previsao img {
+    width: 50px;
+    height: 50px;
+    background-color: #e0f7fa;
+    border-radius: 50%;
+    margin-bottom: 5px;
+}
+.dia-previsao h6 { margin: 5px 0; font-size: 0.9em; color: #333; }
+.dia-previsao p { margin: 3px 0; font-size: 0.85em; }
+.temperaturas { font-weight: bold; }
+.temp-max { color: #e53935; }
+.temp-min { color: #1e88e5; }
+.descricao-tempo { font-size: 0.8em; color: #555; }
+
+/* Filtros e Destaques */
+.filtros-previsao {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap; /* Para quebrar linha em telas menores */
+}
+.filtros-previsao button.active {
+    background-color: #0d6efd; /* Cor primária do Bootstrap */
+    color: white;
+    border-color: #0d6efd;
+}
+
+/* Estilo para o toggle switch do Bootstrap (se estiver usando) */
+.form-switch .form-check-input {
+    cursor: pointer;
+}
+
+/* Destaque para dias com chuva */
+.dia-previsao.dia-chuvoso {
+    background-color: #e3f2fd; /* Um azul claro para chuva */
+    border-left: 5px solid #2196f3; /* Borda azul mais forte */
+}
+
+.dia-previsao.dia-chuvoso .descricao-tempo::after {
+    content: " 💧"; /* Adiciona um emoji de gota */
+    font-size: 0.9em;
+}
+
+/* Feedback de carregamento na área da previsão */
+.previsao-tempo-resultado .text-info,
+.previsao-tempo-resultado .text-warning,
+.previsao-tempo-resultado .text-danger,
+.previsao-tempo-resultado .text-muted {
+    padding: 10px;
+    text-align: center;
+}
