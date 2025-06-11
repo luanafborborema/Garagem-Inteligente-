@@ -1,0 +1,10 @@
+# Arquivos de configuração de ambiente do backend
+backend/.env
+
+# Pasta de dependências do Node.js DENTRO da pasta backend
+backend/node_modules/
+
+# Outros comuns
+.DS_Store
+*.log
+node_modules/

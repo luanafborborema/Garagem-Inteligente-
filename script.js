@@ -1,660 +1,376 @@
-/**
- * @file script.js
- * @brief Script principal da aplicação Garagem Inteligente.
- * Gerencia a criação, exibição, interação, persistência dos veículos e previsão do tempo interativa via backend.
- */
+// NOME DO ARQUIVO JS DO SEU FRONTEND (Pode ser client.js, script.js, etc.)
+// Este código roda no navegador (frontend) e fala com o nosso backend.
+// Ele NÃO deve ter a chave API secreta do clima.
 
-// IMPORTAÇÕES DAS CLASSES
-import { Veiculo } from './Veiculo.js';
-import { Carro } from './Carro.js';
-import { CarroEsportivo } from './CarroEsportivo.js';
-import { Caminhao } from './Caminhao.js';
-import { Moto } from './Moto.js';
-import { Bicicleta } from './Bicicleta.js';
-import { Manutencao } from './Manutencao.js';
-
-// CONFIGURAÇÕES E CONSTANTES GLOBAIS
-// A API KEY DA OPENWEATHER FOI MOVIDA PARA O BACKEND (server.js e .env)
-// A URL BASE DA OPENWEATHER TAMBÉM NÃO É MAIS USADA DIRETAMENTE AQUI
-
-let feedbackTimeoutGlobal; // Renomeado para evitar conflito se houver outra var feedbackTimeout
-function mostrarFeedback(mensagem, tipo = 'info') {
-    const feedbackDiv = document.getElementById('feedback-message');
-    if (feedbackDiv) {
-        clearTimeout(feedbackTimeoutGlobal);
-        feedbackDiv.textContent = mensagem;
-        feedbackDiv.className = `feedback ${tipo}`;
-        feedbackDiv.style.display = 'block';
-        feedbackTimeoutGlobal = setTimeout(() => { feedbackDiv.style.display = 'none'; }, 5000);
-    } else {
-        console.log(`Feedback (${tipo}): ${mensagem}`);
-    }
-}
-
-// Estado da Aplicação
-let garagem = {};
-let veiculoAtual = null;
-let ultimaPrevisaoProcessadaGlobal = null; // Armazena os dados da última previsão processada
-let ultimaCidadePesquisadaGlobal = "";    // Armazena a cidade da última previsão
-
-const mapaTiposClasse = {
-    carro: Carro, esportivo: CarroEsportivo, caminhao: Caminhao, moto: Moto, bicicleta: Bicicleta
-};
-
-// Referências ao DOM
-const sidebarMenu = document.getElementById('sidebar-menu');
-const mainContent = document.getElementById('main-content');
-const welcomeMessage = document.getElementById('welcome-message');
-const addVeiculoFormContainer = document.getElementById('add-veiculo-form-container');
-const addVeiculoForm = document.getElementById('add-veiculo-form');
-const cancelAddVeiculoBtn = document.getElementById('cancel-add-veiculo');
-const addTipoSelect = document.getElementById('add-tipo');
-const addCaminhaoCapacidadeGroup = document.getElementById('add-caminhao-capacidade-group');
-const addPlacaInput = document.getElementById('add-placa');
-
-const sons = {
-    ligar: document.getElementById('som-ligar'), desligar: document.getElementById('som-desligar'),
-    acelerar: document.getElementById('som-acelerar'), frear: document.getElementById('som-frear'),
-    buzina: document.getElementById('som-buzina'), campainha: document.getElementById('som-campainha')
-};
-
-// FUNÇÕES DE PERSISTÊNCIA
-function salvarGaragem() {
-    try {
-        const garagemJSON = Object.values(garagem).map(v => v.toJSON());
-        localStorage.setItem('garagemInteligente', JSON.stringify(garagemJSON));
-    } catch (error) {
-        console.error("Erro ao salvar garagem:", error);
-        mostrarFeedback("Erro ao salvar dados da garagem.", 'error');
-    }
-}
-window.salvarGaragem = salvarGaragem; // Expondo globalmente se necessário por outras classes
-
-function carregarGaragem() {
-    const garagemSalva = localStorage.getItem('garagemInteligente');
-    if (garagemSalva) {
-        try {
-            const garagemArrayJSON = JSON.parse(garagemSalva);
-            garagem = {}; // Limpa a garagem atual antes de carregar
-            garagemArrayJSON.forEach(veiculoData => {
-                const ClasseVeiculo = mapaTiposClasse[veiculoData.tipo];
-                if (ClasseVeiculo) {
-                    let veiculo;
-                    // Lógica de reconstrução do veículo baseada nos dados salvos
-                    if (veiculoData.tipo === 'caminhao') {
-                        veiculo = new Caminhao(
-                            veiculoData.modelo, veiculoData.cor,
-                            veiculoData.capacidadeCarga, // Note a ordem aqui, placa vem depois se existir
-                            veiculoData.id, // id que era placa antes?
-                            veiculoData.historicoManutencao ? veiculoData.historicoManutencao.map(m => Manutencao.fromJSON(m)).filter(m => m) : [],
-                            veiculoData.cargaAtual // cargaAtual
-                        );
-                        // A placa pode estar no veiculoData.id se for o identificador único, ou precisa ser um campo separado
-                        // Se 'placa' for um campo separado em toJSON, use veiculoData.placa
-                        if(veiculoData.placa) veiculo.placa = veiculoData.placa;
+// =====================================================================================
+//  *** PASSO MAIS IMPORTANTE NESTE ARQUIVO! DEFINA A URL DO SEU BACKEND! ***
+//  Troque "COLOQUE_AQUI_A_URL_REAL..." pela URL do seu serviço no Render.
+//  Copie a URL EXATA que o Render te deu após o deploy do backend.
+//  Ex: const backendUrl = "https://nome-do-meu-backend-12345.onrender.com";
+//  Se testando NO SEU COMPUTADOR e o backend também rodando localmente: use "http://localhost:3001"
+// =====================================================================================
+const backendUrl = "COLOQUE_AQUI_A_URL_REAL_DO_SEU_BACKEND_PUBLICADO_NO_RENDER"; // <--- !!! TROQUE ESTA STRING INTEIRA PELO SEU ENDEREÇO DO RENDER !!!
+// =====================================================================================
 
 
-                    } else if (veiculoData.tipo === 'esportivo') {
-                        veiculo = new CarroEsportivo(
-                            veiculoData.modelo, veiculoData.cor,
-                            veiculoData.id, // id
-                            veiculoData.historicoManutencao ? veiculoData.historicoManutencao.map(m => Manutencao.fromJSON(m)).filter(m => m) : [],
-                            veiculoData.turboAtivado
-                        );
-                         if(veiculoData.placa) veiculo.placa = veiculoData.placa;
-                    } else { // Carro, Moto, Bicicleta
-                         veiculo = new ClasseVeiculo(
-                            veiculoData.modelo, veiculoData.cor,
-                            veiculoData.id, // id
-                            veiculoData.historicoManutencao ? veiculoData.historicoManutencao.map(m => Manutencao.fromJSON(m)).filter(m => m) : []
-                        );
-                         if(veiculoData.placa) veiculo.placa = veiculoData.placa;
-                    }
-                    // A chave da garagem deve ser consistente. Se placa é usada, garanta que ela exista.
-                    // Para bicicleta, o ID gerado automaticamente é usado se não houver placa.
-                    const chaveGaragem = veiculoData.placa || veiculo.id; // Usa placa se existir, senão o ID do veículo
-                    if (chaveGaragem) {
-                        garagem[chaveGaragem] = veiculo;
-                    } else {
-                        console.warn("Veículo carregado sem chave identificadora:", veiculoData);
-                    }
-                }
-            });
-        } catch (error) {
-            console.error("Erro ao carregar garagem:", error);
-            garagem = {}; // Reseta a garagem em caso de erro
-            // localStorage.removeItem('garagemInteligente'); // Opcional: remover dados corrompidos
-            mostrarFeedback("Erro ao carregar dados. Garagem pode estar incompleta ou resetada.", 'error');
-        }
-    }
-}
+console.log(`[FRONTEND] Configurado para chamar backend em: ${backendUrl}`); // Mensagem de debug inicial no console do navegador
+
+// === OBTÉM REFERÊNCIAS DOS ELEMENTOS HTML DA PÁGINA ===
+// Usamos `document.getElementById()` para encontrar os elementos na sua página HTML pelos IDs deles.
+// ESSES IDs AQUI DEVEM BATER EXATAMENTE COM OS IDs DOS SEUS ELEMENTOS NO index.html!
+const botaoVerificarClima = document.getElementById("verificar-clima-btn-bicicleta");
+const inputCidadePrevisao = document.getElementById("cidade-previsao-input-bicicleta");
+const divResultadoPrevisao = document.getElementById("previsao-tempo-resultado-bicicleta");
+
+// IDs das áreas (divs) onde os resultados das Dicas de Manutenção serão exibidos (da A8).
+// VERIFIQUE SE ESSES IDs CORRESPONDEM AOS DAS SUAS DIVS NO index.html.
+const divListaDicasGerais = document.getElementById("lista-dicas-gerais-div");
+const divListaDicasPorTipo = document.getElementById("lista-dicas-por-tipo-div");
+
+// IDs dos botões que você vai clicar para pedir as Dicas de Manutenção (da A8).
+// VERIFIQUE SE ESSES IDs CORRESPONDEM AOS DOS SEUS BOTÕES NO index.html.
+const botaoBuscarDicasGerais = document.getElementById("btn-buscar-dicas-gerais"); // Ex: <button id="btn-buscar-dicas-gerais">
+const botaoBuscarDicasCarro = document.getElementById("btn-buscar-dicas-carro");   // Ex: <button id="btn-buscar-dicas-carro">
+const botaoBuscarDicasMoto = document.getElementById("btn-buscar-dicas-moto");     // Ex: <button id="btn-buscar-dicas-moto">
+const botaoBuscarDicasCaminhao = document.getElementById("btn-buscar-dicas-caminhao"); // Ex: <button id="btn-buscar-dicas-caminhao">
+// Se você criou botões para outros tipos de veículo, adicione a referência aqui.
 
 
-// FUNÇÕES DA API DE PREVISÃO DO TEMPO (AGORA CHAMAM O BACKEND)
-// A função buscarPrevisaoDetalhada(cidade) foi movida para dentro do event listener de click,
-// e sua lógica interna foi alterada para chamar o backend.
+// ===========================================================================
+//         LÓGICA PARA O CLIMA (CONECTANDO BOTÃO -> PEGA INPUT -> CHAMA BACKEND -> MOSTRA RESULTADO)
+//         Este código será executado quando o botão 'verificar-clima-btn-bicicleta' for clicado.
+// ===========================================================================
 
-/** @description Processa os dados brutos da API (retornados pelo backend) para um formato diário. ESTA FUNÇÃO NÃO MUDA. */
-function processarDadosForecast(dataApi) {
-    if (!dataApi || !dataApi.list || !Array.isArray(dataApi.list) || dataApi.list.length === 0) {
-        console.warn("[Frontend] Dados da API inválidos ou vazios para processarForecast:", dataApi);
-        return null;
-    }
-    const previsoesAgrupadas = {};
-    dataApi.list.forEach(item => {
-        const dia = item.dt_txt.split(' ')[0];
-        if (!previsoesAgrupadas[dia]) {
-            previsoesAgrupadas[dia] = { temps: [], weatherDetails: [], condicoes: [] };
-        }
-        previsoesAgrupadas[dia].temps.push(item.main.temp);
-        previsoesAgrupadas[dia].weatherDetails.push({ description: item.weather[0].description, icon: item.weather[0].icon });
-        previsoesAgrupadas[dia].condicoes.push(item.weather[0].main.toLowerCase());
-    });
+// Primeiro, verificamos se TODOS os elementos HTML que precisamos para o clima foram encontrados na página.
+if (botaoVerificarClima && inputCidadePrevisao && divResultadoPrevisao) {
+    console.log("[FRONTEND] Elementos HTML essenciais para a funcionalidade de Clima encontrados. Configurando listener...");
+    // Se encontrou todos, adiciona o 'ouvinte' para o evento de 'click' no botão de verificar clima.
+    // Quando o botão é clicado, a função `async () => { ... }` é executada.
+    botaoVerificarClima.addEventListener("click", async () => {
+        // Pega o texto atual digitado no campo de input da cidade e remove espaços extras no começo e fim.
+        const cidade = inputCidadePrevisao.value.trim();
 
-    const previsaoDiariaFinal = [];
-    for (const diaKey in previsoesAgrupadas) {
-        const dadosDia = previsoesAgrupadas[diaKey];
-        const temp_min = Math.min(...dadosDia.temps);
-        const temp_max = Math.max(...dadosDia.temps);
-        const detalheCentral = dadosDia.weatherDetails[Math.floor(dadosDia.weatherDetails.length / 2)] || dadosDia.weatherDetails[0];
-        let descricaoRep = detalheCentral ? detalheCentral.description : "N/D";
-        descricaoRep = descricaoRep.charAt(0).toUpperCase() + descricaoRep.slice(1);
+        // Antes de buscar, limpa o conteúdo da div onde o resultado aparece e coloca uma mensagem de carregamento.
+        divResultadoPrevisao.innerHTML = "<p>Carregando previsão do tempo...</p>";
 
-        const temChuva = dadosDia.condicoes.some(c => ["rain", "drizzle", "thunderstorm"].includes(c));
-
-        previsaoDiariaFinal.push({
-            data: diaKey, temp_min: parseFloat(temp_min.toFixed(1)), temp_max: parseFloat(temp_max.toFixed(1)),
-            descricao: descricaoRep, icon: detalheCentral ? detalheCentral.icon : "01d", temChuva
-        });
-    }
-    return previsaoDiariaFinal.slice(0, 5); // Retorna os primeiros 5 dias
-}
-
-/** @description Formata data "AAAA-MM-DD" para "DD/MM". ESTA FUNÇÃO NÃO MUDA. */
-function formatarDataPtBr(dataString) {
-    const partes = dataString.split('-');
-    return partes.length === 3 ? `${partes[2]}/${partes[1]}` : dataString;
-}
-
-/** @description Exibe a previsão detalhada na UI. ESTA FUNÇÃO NÃO MUDA. */
-function exibirPrevisaoDetalhada(previsaoDiariaProcessada, nomeCidade, elementoResultadoId, diasParaExibir = 5, opcoesDestaque = { chuva: false }) {
-    const resultadoDiv = document.getElementById(elementoResultadoId);
-    // Pega o tipo de veículo do ID do elemento de resultado para o span do nome da cidade
-    const tipoVeiculoMatch = elementoResultadoId.match(/previsao-tempo-resultado-(.+)/);
-    const tipoVeiculo = tipoVeiculoMatch ? tipoVeiculoMatch[1] : null;
-    const nomeCidadeSpan = tipoVeiculo ? document.getElementById(`nome-cidade-previsao-${tipoVeiculo}`) : null;
-
-
-    if (!resultadoDiv) {
-        console.error(`[Frontend] Elemento de resultado da previsão #${elementoResultadoId} não encontrado.`);
-        return;
-    }
-    resultadoDiv.innerHTML = ''; // Limpa resultados anteriores
-    if (nomeCidadeSpan) nomeCidadeSpan.textContent = nomeCidade;
-
-    if (!previsaoDiariaProcessada || previsaoDiariaProcessada.length === 0) {
-        resultadoDiv.innerHTML = `<p class="text-warning">Não há dados de previsão para ${nomeCidade}.</p>`;
-        return;
-    }
-
-    const diasASeremExibidos = previsaoDiariaProcessada.slice(0, diasParaExibir);
-    if (diasASeremExibidos.length === 0) {
-        resultadoDiv.innerHTML = `<p class="text-info">Nenhuma previsão para o período selecionado.</p>`;
-        return;
-    }
-
-    const diasContainer = document.createElement('div');
-    diasContainer.className = 'previsao-dias-container';
-    diasASeremExibidos.forEach(diaObj => {
-        const diaDiv = document.createElement('div');
-        diaDiv.className = 'dia-previsao';
-        if (opcoesDestaque.chuva && diaObj.temChuva) {
-            diaDiv.classList.add('dia-chuvoso');
-        }
-        diaDiv.innerHTML = `
-            <h6>${formatarDataPtBr(diaObj.data)}</h6>
-            <img src="https://openweathermap.org/img/wn/${diaObj.icon}@2x.png" alt="${diaObj.descricao}" title="${diaObj.descricao}">
-            <p class="temperaturas"><span class="temp-max">${diaObj.temp_max}°C</span> / <span class="temp-min">${diaObj.temp_min}°C</span></p>
-            <p class="descricao-tempo">${diaObj.descricao}</p>
-        `;
-        diasContainer.appendChild(diaDiv);
-    });
-    resultadoDiv.appendChild(diasContainer);
-}
-
-// FUNÇÕES DE INTERFACE E LÓGICA PRINCIPAL
-function popularSidebar() {
-    sidebarMenu.querySelectorAll('li.veiculo-item').forEach(item => item.remove());
-    const addActionItem = sidebarMenu.querySelector('li.sidebar-action');
-    Object.values(garagem).sort((a, b) => a.modelo.localeCompare(b.modelo)).forEach(v => {
-        const li = document.createElement('li');
-        li.className = 'veiculo-item';
-        const idHtml = v.placa || v.id; // Usa placa se existir, senão o ID do veículo
-        li.innerHTML = `<a href="#" data-id="${idHtml}">${v.modelo} (${v.placa || 'Sem Placa'})</a>`;
-        li.querySelector('a').addEventListener('click', e => { e.preventDefault(); mostrarVeiculo(idHtml); });
-        if (addActionItem) sidebarMenu.insertBefore(li, addActionItem); else sidebarMenu.appendChild(li);
-    });
-}
-
-function mostrarVeiculo(chaveVeiculo) {
-    const veiculo = garagem[chaveVeiculo];
-    if (!veiculo) { mostrarFeedback("Erro: Veículo não encontrado.", 'error'); mostrarWelcome(); return; }
-    veiculoAtual = chaveVeiculo; // Atualiza o veículo atual com a chave correta
-
-    welcomeMessage.style.display = 'none';
-    addVeiculoFormContainer.style.display = 'none';
-    addVeiculoFormContainer.classList.remove('active');
-    document.querySelectorAll('.veiculo-container').forEach(c => { c.style.display = 'none'; c.classList.remove('active'); });
-
-    const tipoVeiculo = veiculo.getTipo(); // Ex: 'carro', 'esportivo'
-    const containerId = `${tipoVeiculo}-container`; // Ex: 'carro-container'
-    const container = document.getElementById(containerId);
-
-    if (container) {
-        container.querySelector(`#${tipoVeiculo}-modelo`).textContent = veiculo.modelo;
-        container.querySelector(`#${tipoVeiculo}-cor`).textContent = veiculo.cor;
-        const placaSpan = container.querySelector(`#${tipoVeiculo}-placa`);
-        if (placaSpan) placaSpan.textContent = veiculo.placa || (tipoVeiculo === 'bicicleta' ? 'N/A' : 'Não informada');
-
-
-        if (typeof veiculo.atualizarStatus === 'function') veiculo.atualizarStatus();
-        if (typeof veiculo.atualizarVelocidade === 'function') veiculo.atualizarVelocidade();
-        if (veiculo instanceof Caminhao && typeof veiculo.atualizarInfoCaminhao === 'function') veiculo.atualizarInfoCaminhao();
-        if (veiculo instanceof CarroEsportivo && typeof veiculo.atualizarTurboDisplay === 'function') veiculo.atualizarTurboDisplay();
-        if (typeof veiculo.atualizarDisplayManutencao === 'function') veiculo.atualizarDisplayManutencao();
-        if (typeof veiculo.atualizarEstadoBotoesWrapper === 'function') veiculo.atualizarEstadoBotoesWrapper();
-
-        // Reset da UI de previsão para o veículo atual
-        const previsaoResultDiv = container.querySelector(`#previsao-tempo-resultado-${tipoVeiculo}`);
-        if (previsaoResultDiv) previsaoResultDiv.innerHTML = '<p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>';
-        const cidadeInput = container.querySelector(`#cidade-previsao-input-${tipoVeiculo}`);
-        if (cidadeInput) cidadeInput.value = ultimaCidadePesquisadaGlobal === "" && veiculoAtual === chaveVeiculo ? "" : ultimaCidadePesquisadaGlobal; // Mantém cidade se for a mesma global ou limpa
-        const nomeCidadeSpan = container.querySelector(`#nome-cidade-previsao-${tipoVeiculo}`);
-        if (nomeCidadeSpan) nomeCidadeSpan.textContent = ultimaCidadePesquisadaGlobal === "" && veiculoAtual === chaveVeiculo ? "[Cidade]" : ultimaCidadePesquisadaGlobal;
-
-        // Atualiza os filtros para o estado global ou padrão
-        container.querySelectorAll(`.filtro-dias-btn[data-veiculo-tipo="${tipoVeiculo}"]`).forEach(btn => {
-            btn.classList.remove('active');
-            // Se houver uma previsão global, tenta aplicar o filtro ativo dela, senão padrão 5 dias
-            // Isso precisa de uma lógica mais elaborada para sincronizar estado dos filtros entre veículos
-            // Por simplicidade, resetamos para 5 dias ou o filtro que estiver ativo na ultimaPrevisao...
-            if (btn.dataset.dias === "5") btn.classList.add('active'); // Padrão
-        });
-        const destaqueChuvaCheck = container.querySelector(`#destaque-chuva-${tipoVeiculo}`);
-        // if(destaqueChuvaCheck) destaqueChuvaCheck.checked = false; // Padrão ou manter estado global
-
-        // Se já existe uma previsão global, exibe-a
-        if (ultimaPrevisaoProcessadaGlobal && ultimaCidadePesquisadaGlobal && veiculoAtual === chaveVeiculo) {
-             const diasAtivosBtn = document.querySelector(`.filtro-dias-btn[data-veiculo-tipo="${tipoVeiculo}"].active`);
-             const diasParaExibir = diasAtivosBtn ? parseInt(diasAtivosBtn.dataset.dias) : 5;
-             const destacarChuva = destaqueChuvaCheck ? destaqueChuvaCheck.checked : false;
-             exibirPrevisaoDetalhada(ultimaPrevisaoProcessadaGlobal, ultimaCidadePesquisadaGlobal, `previsao-tempo-resultado-${tipoVeiculo}`, diasParaExibir, { chuva: destacarChuva });
-        }
-
-
-        container.style.display = 'block';
-        container.classList.add('active');
-        document.querySelectorAll('#sidebar-menu a').forEach(a => a.classList.remove('active'));
-        const linkSidebar = document.querySelector(`#sidebar-menu a[data-id="${chaveVeiculo}"]`);
-        if (linkSidebar) linkSidebar.classList.add('active');
-        mainContent.classList.add('content-visible');
-    } else {
-        mostrarFeedback(`Erro: Container #${containerId} não encontrado para tipo ${tipoVeiculo}.`, 'error');
-        mostrarWelcome();
-    }
-}
-
-function mostrarFormAddVeiculo() {
-    veiculoAtual = null; // Limpa veículo atual ao mostrar form
-    welcomeMessage.style.display = 'none';
-    document.querySelectorAll('.veiculo-container').forEach(c => { c.style.display = 'none'; c.classList.remove('active'); });
-    addVeiculoForm.reset();
-    addCaminhaoCapacidadeGroup.style.display = 'none';
-    const placaGroup = addPlacaInput.closest('.form-group');
-    // Configuração inicial do campo placa ao abrir o form (considera tipo não selecionado)
-    placaGroup.style.display = 'block'; addPlacaInput.required = true; addPlacaInput.disabled = false;
-    addVeiculoFormContainer.style.display = 'block';
-    addVeiculoFormContainer.classList.add('active');
-    document.querySelectorAll('#sidebar-menu a').forEach(a => a.classList.remove('active'));
-    const addLink = document.querySelector('#sidebar-menu a[data-action="mostrarFormAddVeiculo"]');
-    if (addLink) addLink.classList.add('active');
-    mainContent.classList.add('content-visible');
-}
-
-function mostrarWelcome() {
-    veiculoAtual = null;
-    addVeiculoFormContainer.style.display = 'none';
-    addVeiculoFormContainer.classList.remove('active');
-    document.querySelectorAll('.veiculo-container').forEach(c => { c.style.display = 'none'; c.classList.remove('active'); });
-    welcomeMessage.style.display = 'block';
-    document.querySelectorAll('#sidebar-menu a').forEach(a => a.classList.remove('active'));
-    mainContent.classList.remove('content-visible');
-}
-
-// TRATAMENTO DE EVENTOS
-addVeiculoForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const formData = new FormData(addVeiculoForm);
-    const tipo = formData.get('tipo');
-    const modelo = formData.get('modelo').trim();
-    const cor = formData.get('cor').trim();
-    let placa = formData.get('placa'); // Placa pode ser null se o campo estiver desabilitado
-    if(placa) placa = placa.trim().toUpperCase();
-
-
-    if (!tipo || !modelo || !cor) {
-        return mostrarFeedback("Tipo, modelo e cor são obrigatórios.", 'warning');
-    }
-    if (tipo !== 'bicicleta' && (!placa || placa.length < 5)) { // Validação de placa para não bicicletas
-        return mostrarFeedback("Placa inválida ou obrigatória para este tipo de veículo (mínimo 5 caracteres).", 'warning');
-    }
-    if (tipo !== 'bicicleta' && garagem[placa]) { // Verifica duplicidade de placa para não bicicletas
-        return mostrarFeedback(`Veículo com placa ${placa} já existe.`, 'error');
-    }
-
-    const ClasseVeiculo = mapaTiposClasse[tipo];
-    if (ClasseVeiculo) {
-        try {
-            let novoVeiculo;
-            const idParaNovoVeiculo = tipo === 'bicicleta' ? null : placa; // Bicicleta usa ID gerado, outros usam placa como ID inicial se fornecida
-
-            if (tipo === 'caminhao') {
-                const capacidade = formData.get('capacidade');
-                novoVeiculo = new ClasseVeiculo(modelo, cor, parseInt(capacidade) || 5000, idParaNovoVeiculo, [], 0); // Modelo, Cor, Capacidade, ID(Placa), Histórico, CargaAtual
-                if(placa && tipo !== 'bicicleta') novoVeiculo.placa = placa;
-            } else if (tipo === 'esportivo') {
-                novoVeiculo = new ClasseVeiculo(modelo, cor, idParaNovoVeiculo, [], false); // Modelo, Cor, ID(Placa), Histórico, Turbo
-                if(placa && tipo !== 'bicicleta') novoVeiculo.placa = placa;
-            } else { // Carro, Moto, Bicicleta
-                novoVeiculo = new ClasseVeiculo(modelo, cor, idParaNovoVeiculo, []); // Modelo, Cor, ID(Placa ou null), Histórico
-                if(placa && tipo !== 'bicicleta') novoVeiculo.placa = placa;
-            }
-
-            // Chave para o objeto garagem: placa para veículos motorizados, ID interno para bicicleta
-            const chaveGaragem = (tipo !== 'bicicleta' && placa) ? placa : novoVeiculo.id;
-
-            if (garagem[chaveGaragem]) { // Checagem final de duplicidade (importante para bicicleta com ID gerado)
-                 mostrarFeedback(`Veículo com identificador ${chaveGaragem} já existe.`, 'error');
-                 return; // Evita sobrescrever
-            }
-
-            garagem[chaveGaragem] = novoVeiculo;
-            salvarGaragem();
-            popularSidebar();
-            mostrarVeiculo(chaveGaragem); // Mostra o veículo recém-adicionado
-            mostrarFeedback(`'${modelo}' adicionado com sucesso!`, 'success');
-            addVeiculoFormContainer.style.display = 'none';
-            addVeiculoFormContainer.classList.remove('active');
-        } catch (error) {
-            console.error(`Erro ao criar ${tipo}:`, error);
-            mostrarFeedback(`Erro ao criar ${tipo}: ${error.message}`, 'error');
-        }
-    } else {
-        mostrarFeedback("Tipo de veículo inválido selecionado.", "error");
-    }
-});
-
-cancelAddVeiculoBtn.addEventListener('click', () => {
-    addVeiculoFormContainer.style.display = 'none';
-    addVeiculoFormContainer.classList.remove('active');
-    if (veiculoAtual && garagem[veiculoAtual]) {
-        mostrarVeiculo(veiculoAtual);
-    } else {
-        mostrarWelcome();
-    }
-});
-
-addTipoSelect.addEventListener('change', (e) => {
-    const tipo = e.target.value;
-    addCaminhaoCapacidadeGroup.style.display = (tipo === 'caminhao') ? 'block' : 'none';
-    const placaGroup = addPlacaInput.closest('.form-group');
-    if (tipo === 'bicicleta') {
-        placaGroup.style.display = 'none';
-        addPlacaInput.required = false;
-        addPlacaInput.disabled = true;
-        addPlacaInput.value = ''; // Limpa valor da placa para bicicleta
-    } else {
-        placaGroup.style.display = 'block';
-        addPlacaInput.required = true;
-        addPlacaInput.disabled = false;
-    }
-});
-
-mainContent.addEventListener('click', async (e) => {
-    const target = e.target;
-
-    // Ações do Veículo
-    if (target.tagName === 'BUTTON' && target.dataset.acao && target.closest('.actions')) {
-        if (!veiculoAtual || !garagem[veiculoAtual]) {
-            return mostrarFeedback("Nenhum veículo selecionado para realizar a ação.", 'warning');
-        }
-        const veiculo = garagem[veiculoAtual];
-        const acao = target.dataset.acao;
-        try {
-            if (typeof veiculo[acao] === 'function') {
-                if (['ligar', 'desligar', 'acelerar', 'frear', 'buzinar', 'pedalar'].includes(acao)) {
-                    veiculo[acao](sons); // Passa o objeto de sons para estas ações
-                } else if ((acao === 'carregar' || acao === 'descarregar') && veiculo instanceof Caminhao) {
-                    const cargaInput = document.getElementById('caminhao-carga-input'); // ID Fixo do input de carga
-                    veiculo[acao](cargaInput ? parseFloat(cargaInput.value) : 0); // Converte para número
-                    if (cargaInput) cargaInput.value = ''; // Limpa o input após a ação
-                } else {
-                    veiculo[acao](); // Para outras ações como ativar/desativar turbo
-                }
-            } else {
-                console.warn(`Ação '${acao}' não encontrada no veículo ${veiculo.modelo}`);
-            }
-        } catch (error) {
-            console.error(`Erro na ação '${acao}' do veículo ${veiculo.modelo}:`, error);
-            mostrarFeedback(`Erro ao executar '${acao}': ${error.message}`, 'error');
-        }
-    }
-
-    // Buscar Previsão do Tempo (CHAMANDO O BACKEND)
-    if (target.classList.contains('verificar-clima-btn-veiculo')) {
-        e.preventDefault();
-        const botao = target;
-        const tipoVeiculo = botao.dataset.veiculoTipo;
-        const cidadeInput = document.getElementById(`cidade-previsao-input-${tipoVeiculo}`);
-        const resultadoDiv = document.getElementById(`previsao-tempo-resultado-${tipoVeiculo}`);
-        const cidade = cidadeInput ? cidadeInput.value.trim() : "";
-
+        // Validação simples: se a cidade estiver vazia depois de remover espaços, mostra um erro e para.
         if (!cidade) {
-            mostrarFeedback("Digite uma cidade para ver a previsão.", "warning");
-            return;
-        }
-        if (!resultadoDiv) {
-            console.error(`Elemento de resultado da previsão para ${tipoVeiculo} não encontrado.`);
-            mostrarFeedback("Erro interno: não foi possível exibir a previsão.", "error");
-            return;
+            divResultadoPrevisao.innerHTML = '<p style="color:red;">Por favor, digite o nome de uma cidade para verificar o clima.</p>';
+            return; // Sai da função sem fazer a chamada fetch.
         }
 
-        resultadoDiv.innerHTML = `<p class="text-info">Buscando previsão para ${cidade}...</p>`;
-        botao.disabled = true;
+        console.log(`[FRONTEND] Botão de Clima clicado. Preparando para buscar previsão para "${cidade}" no backend.`);
 
         try {
-            // A URL agora aponta para o seu servidor backend
-            const apiUrl = `http://localhost:3001/api/previsao/${encodeURIComponent(cidade)}`;
-            console.log(`[Frontend] Chamando backend em: ${apiUrl}`);
+            // === FAZENDO A REQUISIÇÃO HTTP PARA O NOSSO PRÓPRIO BACKEND ===
+            // USAMOS A `backendUrl` que definimos no topo, combinada com o endpoint que criamos no server.js (`/api/previsao/`)
+            // e passamos a `cidade` como parte da URL (parâmetro de rota).
+            // NOTA: A CHAVE API DO OPENWEATHERMAP NÃO VEM NUNCA AQUI NO FRONTEND! Ela fica só no BACKEND!
+            const urlParaChamarBackend = `${backendUrl}/api/previsao/${cidade}`;
+            console.log(`[FRONTEND] Chamando URL do backend para clima: ${urlParaChamarBackend}`);
 
-            const response = await fetch(apiUrl);
+            // Usa `fetch` para enviar a requisição GET para o nosso backend.
+            const responseDoBackend = await fetch(urlParaChamarBackend);
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({})); // Tenta pegar erro JSON, senão objeto vazio
-                // Usa a mensagem de erro do backend, se disponível
-                throw new Error(errorData.error || `Erro ${response.status} do backend ao buscar previsão.`);
+            // === VERIFICANDO A RESPOSTA QUE VEIO DO NOSSO BACKEND ===
+            // Se o status da resposta do nosso backend não for OK (ou seja, se for 4xx ou 5xx).
+            if (!responseDoBackend.ok) {
+                // Tentamos ler a resposta como JSON, porque o nosso backend (server.js) envia erros no formato JSON { error: "mensagem de erro" }.
+                const errorDataDoBackend = await responseDoBackend.json();
+                // Loga o erro no console do navegador para ajudar a gente a depurar.
+                console.error(`[FRONTEND] Erro recebido do Backend (${responseDoBackend.status} - ${responseDoBackend.statusText}):`, errorDataDoBackend);
+
+                // Pega a mensagem de erro mais útil para mostrar para o usuário. Prioriza a mensagem 'error' que o backend pode ter enviado,
+                // ou cria uma mensagem genérica com o status HTTP se não houver mensagem 'error'.
+                const errorMessageParaUI = errorDataDoBackend.error || `Erro desconhecido (Status: ${responseDoBackend.status}) ao obter previsão.`;
+
+                // Lança um novo objeto `Error` com a mensagem. Isso faz com que o código "pule" direto para o bloco `catch` abaixo.
+                throw new Error(errorMessageParaUI);
             }
 
-            const dataApi = await response.json(); // dataApi contém os dados da OpenWeatherMap, repassados pelo backend
-            console.log("[Frontend] Dados da previsão recebidos do backend:", dataApi);
+            // === SE A RESPOSTA DO BACKEND FOI DE SUCESSO (STATUS 200) ===
+            // Lê os dados JSON que o nosso backend enviou. Nosso backend já enviou os dados formatados, do jeito que queremos!
+            const dadosRecebidosDoBackend = await responseDoBackend.json();
+            console.log(`[FRONTEND] Dados de previsão recebidos do backend:`, dadosRecebidosDoBackend);
 
-            const previsaoProcessada = processarDadosForecast(dataApi); // Sua função existente
-
-            if (previsaoProcessada && previsaoProcessada.length > 0) {
-                ultimaPrevisaoProcessadaGlobal = [...previsaoProcessada]; // Atualiza o cache global
-                ultimaCidadePesquisadaGlobal = cidade; // Atualiza a cidade global
-
-                const diasAtivosBtn = container.querySelector(`.filtro-dias-btn[data-veiculo-tipo="${tipoVeiculo}"].active`);
-                const diasParaExibir = diasAtivosBtn ? parseInt(diasAtivosBtn.dataset.dias) : 5;
-                const destaqueChuvaCheck = container.querySelector(`#destaque-chuva-${tipoVeiculo}`);
-                const destacarChuva = destaqueChuvaCheck ? destaqueChuvaCheck.checked : false;
-                
-                exibirPrevisaoDetalhada(previsaoProcessada, cidade, resultadoDiv.id, diasParaExibir, { chuva: destacarChuva });
-            } else {
-                if (resultadoDiv) resultadoDiv.innerHTML = `<p class="text-warning">Não foi possível processar a previsão para ${cidade} a partir dos dados do backend.</p>`;
-                ultimaPrevisaoProcessadaGlobal = null;
-                ultimaCidadePesquisadaGlobal = "";
-            }
+            // === ATUALIZA A PARTE VISUAL DA PÁGINA (O HTML) COM OS DADOS RECEBIDOS DO BACKEND ===
+            // Acessamos as propriedades do objeto `dadosRecebidosDoBackend` que vêm do nosso backend.
+            divResultadoPrevisao.innerHTML = `
+              <h5>Previsão do tempo para ${dadosRecebidosDoBackend.nomeCidade}, ${dadosRecebidosDoBackend.pais}</h5>
+              <p>${dadosRecebidosDoBackend.descricaoClima}</p>
+              <img src="https://openweathermap.org/img/wn/${dadosRecebidosDoBackend.iconeClima}@2x.png" alt="${dadosRecebidosDoBackend.descricaoClima}">
+              <p>Temperatura: ${dadosRecebidosDoBackend.temperaturaAtual}°C (Sensação: ${dadosRecebidosDoBackend.sensacaoTermica}°C)</p>
+              <p>Máx: ${dadosRecebidosDoBackend.temperaturaMax}°C / Mín: ${dadosRecebidosDoBackend.temperaturaMin}°C</p>
+              <p>Vento: ${dadosRecebidosDoBackend.velocidadeVento} m/s</p>
+            `;
 
         } catch (error) {
-            console.error("[Frontend] Erro ao buscar previsão via backend:", error);
-            if (resultadoDiv) resultadoDiv.innerHTML = `<p class="text-danger">Falha: ${error.message}</p>`;
-            mostrarFeedback(`Falha ao buscar previsão: ${error.message}`, 'error');
-            ultimaPrevisaoProcessadaGlobal = null;
-            ultimaCidadePesquisadaGlobal = "";
-        } finally {
-            botao.disabled = false;
+            // === TRATANDO ERROS ===
+            // Qualquer erro que aconteça durante o `fetch` (como problema de rede do navegador, ou o erro que "lançamos" no `if (!responseDoBackend.ok)`),
+            // será pego por este bloco `catch`.
+            console.error("[FRONTEND] Erro geral durante a busca ou processamento da previsão:", error);
+            // Mostra a mensagem do erro para o usuário na área de resultado.
+            divResultadoPrevisao.innerHTML = `<p style="color:red;">Erro: ${error.message}</p>`;
         }
-    }
-
-    // Filtro de Dias da Previsão
-    if (target.classList.contains('filtro-dias-btn')) {
-        e.preventDefault();
-        const botaoFiltro = target;
-        const tipoVeiculo = botaoFiltro.dataset.veiculoTipo; // Pega o tipo do botão
-        const dias = parseInt(botaoFiltro.dataset.dias);
-
-        // Remove 'active' de todos os botões de filtro para este tipo de veículo
-        document.querySelectorAll(`.filtro-dias-btn[data-veiculo-tipo="${tipoVeiculo}"]`).forEach(b => b.classList.remove('active'));
-        botaoFiltro.classList.add('active'); // Adiciona 'active' ao botão clicado
-
-        if (ultimaPrevisaoProcessadaGlobal && ultimaCidadePesquisadaGlobal) {
-            const destaqueChuvaCheck = document.getElementById(`destaque-chuva-${tipoVeiculo}`);
-            const destacarChuva = destaqueChuvaCheck ? destaqueChuvaCheck.checked : false;
-            exibirPrevisaoDetalhada(ultimaPrevisaoProcessadaGlobal, ultimaCidadePesquisadaGlobal, `previsao-tempo-resultado-${tipoVeiculo}`, dias, { chuva: destacarChuva });
-        } else {
-            const resultadoDiv = document.getElementById(`previsao-tempo-resultado-${tipoVeiculo}`);
-            if (resultadoDiv) resultadoDiv.innerHTML = `<p class="text-muted">Busque uma cidade primeiro para aplicar filtros.</p>`;
-        }
-    }
-
-    // Remover Manutenção
-    if (target.classList.contains('remover-manutencao-btn')) {
-        const idManut = target.dataset.id;
-        if (veiculoAtual && garagem[veiculoAtual] && idManut) {
-            if (confirm("Tem certeza que deseja remover este registro de manutenção?")) {
-                garagem[veiculoAtual].removerManutencao(idManut); // A classe Veiculo já deve salvar e atualizar a UI
-            }
-        } else {
-            mostrarFeedback("Não foi possível identificar o veículo ou o registro de manutenção para remoção.", 'warning');
-        }
-    }
-});
-
-function inicializarListenersDeToggleChuva() {
-    document.querySelectorAll('.toggle-destaque-chuva').forEach(checkbox => {
-        checkbox.addEventListener('change', function() { // Usando 'function' para ter o 'this' correto
-            const tipoVeiculo = this.dataset.veiculoTipo;
-            const destacarChuva = this.checked;
-            const resultadoDivId = `previsao-tempo-resultado-${tipoVeiculo}`;
-
-            const diasAtivosBtn = document.querySelector(`.filtro-dias-btn[data-veiculo-tipo="${tipoVeiculo}"].active`);
-            const diasParaExibir = diasAtivosBtn ? parseInt(diasAtivosBtn.dataset.dias) : 5;
-
-            if (ultimaPrevisaoProcessadaGlobal && ultimaCidadePesquisadaGlobal) {
-                exibirPrevisaoDetalhada(ultimaPrevisaoProcessadaGlobal, ultimaCidadePesquisadaGlobal, resultadoDivId, diasParaExibir, { chuva: destacarChuva });
-            } else {
-                 // Opcional: pode mostrar um feedback se não houver previsão para aplicar o toggle
-                 // console.log("Nenhuma previsão carregada para aplicar o destaque de chuva.");
-            }
-        });
     });
+} else {
+     // Se algum dos elementos HTML com os IDs corretos não foi encontrado quando a página carregou.
+     console.error("[FRONTEND] ERRO FATAL: Elementos HTML para a funcionalidade de Clima não encontrados. Verifique os IDs no seu index.html. A funcionalidade de Clima NÃO VAI FUNCIONAR.");
+     if (!botaoVerificarClima) console.error("- Elemento com ID 'verificar-clima-btn-bicicleta' não encontrado.");
+     if (!inputCidadePrevisao) console.error("- Elemento com ID 'cidade-previsao-input-bicicleta' não encontrado.");
+     if (!divResultadoPrevisao) console.error("- Elemento com ID 'previsao-tempo-resultado-bicicleta' não encontrado.");
+     console.log("[FRONTEND] Certifique-se de que o script está sendo carregado APÓS os elementos HTML existirem (geralmente colocar o <script> antes do fechamento </body> resolve).");
 }
 
-mainContent.addEventListener('submit', (e) => { // Formulário de Manutenção
-    if (e.target.classList.contains('manutencao-form')) {
-        e.preventDefault();
-        if (!veiculoAtual || !garagem[veiculoAtual]) {
-            return mostrarFeedback("Selecione um veículo para adicionar manutenção.", 'error');
+
+// ===========================================================================
+//         FUNÇÕES E LÓGICA PARA AS DICAS DE MANUTENÇÃO (DA ATIVIDADE A8)
+//         Você precisará ter botões e divs no seu HTML para usar/ver isso!
+//         E CONECTAR OS BOTÕES ÀS FUNÇÕES NO FINAL DESTE CÓDIGO.
+// ===========================================================================
+
+// Função auxiliar para mostrar mensagens (loading, sucesso, erro) na área de Dicas Gerais.
+function exibirMensagemDicasGerais(mensagem, isError = false) {
+     if (divListaDicasGerais) { // Verifica se a div de Dicas Gerais foi encontrada no HTML
+         // Atualiza o conteúdo da div, mudando a cor para vermelho se for uma mensagem de erro.
+         divListaDicasGerais.innerHTML = `<p style="color:${isError ? 'red' : 'black'};">${mensagem}</p>`;
+     } else {
+         console.error("[FRONTEND] Div para Dicas Gerais (ID: 'lista-dicas-gerais-div') NÃO encontrada no HTML. Não é possível exibir mensagens ou resultados para Dicas Gerais.");
+     }
+}
+
+// Função auxiliar para mostrar mensagens (loading, sucesso, erro) na área de Dicas Por Tipo.
+function exibirMensagemDicasPorTipo(mensagem, isError = false) {
+     if (divListaDicasPorTipo) { // Verifica se a div de Dicas Por Tipo foi encontrada no HTML
+         // Atualiza o conteúdo da div, mudando a cor para vermelho se for uma mensagem de erro.
+         divListaDicasPorTipo.innerHTML = `<p style="color:${isError ? 'red' : 'black'};">${mensagem}</p>`;
+     } else {
+         console.error("[FRONTEND] Div para Dicas Por Tipo (ID: 'lista-dicas-por-tipo-div') NÃO encontrada no HTML. Não é possível exibir mensagens ou resultados para Dicas Por Tipo.");
+     }
+}
+
+
+// === Função para buscar Dicas Gerais de Manutenção ===
+// Esta função é chamada, por exemplo, quando o botão 'btn-buscar-dicas-gerais' é clicado.
+async function buscarDicasGerais() {
+    console.log(`[FRONTEND] Iniciando busca por dicas gerais no backend: ${backendUrl}/api/dicas-manutencao`);
+    exibirMensagemDicasGerais("Carregando dicas gerais..."); // Mostra mensagem de loading na área correta.
+
+    try {
+        // === CHAMA O ENDPOINT ESPECÍFICO DO NOSSO BACKEND PARA DICAS GERAIS ===
+        const response = await fetch(`${backendUrl}/api/dicas-manutencao`);
+
+        // === VERIFICA A RESPOSTA DO NOSSO BACKEND ===
+        // Se o nosso backend retornou um status de erro.
+        if (!response.ok) {
+            const errorData = await response.json(); // Lê a resposta de erro do backend (ex: { error: "Mensagem" })
+             const errorMessage = errorData.error || `Erro ao buscar dicas gerais (Status: ${response.status}).`;
+             throw new Error(errorMessage); // Lança erro para ir pro catch
         }
-        const veiculo = garagem[veiculoAtual];
-        const form = e.target;
-        const dataInput = form.querySelector('input[type="datetime-local"]');
-        const tipoManutInput = form.querySelector('input[placeholder="Tipo"]'); // Assume que o placeholder é "Tipo"
-        const custoInput = form.querySelector('input[type="number"]');
-        const descInput = form.querySelector('textarea');
 
-        // Validação simples dos inputs
-        if (!dataInput || !tipoManutInput || !custoInput || !descInput) {
-            return mostrarFeedback("Erro: Formulário de manutenção incompleto.", 'error');
-        }
-        if (!dataInput.value || !tipoManutInput.value.trim() || !custoInput.value) {
-            return mostrarFeedback("Data, Tipo e Custo da manutenção são obrigatórios.", 'warning');
-        }
+        // Se a resposta do backend foi OK (status 200), lê os dados JSON.
+        // O backend configurou esta rota para sempre retornar um array de dicas.
+        const dicas = await response.json();
+        console.log(`[FRONTEND] Dicas gerais recebidas do backend:`, dicas);
 
-        const data = dataInput.value;
-        const tipoManut = tipoManutInput.value.trim();
-        const custo = parseFloat(custoInput.value);
-        const desc = descInput.value.trim();
-
-        const novaManut = new Manutencao(data, tipoManut, custo, desc);
-        const validacao = novaManut.validar();
-
-        if (validacao.valido) {
-            if (veiculo.adicionarManutencao(novaManut)) {
-                form.reset(); // Limpa o formulário se adicionado com sucesso
-                mostrarFeedback("Manutenção adicionada com sucesso!", 'success'); // Feedback já está em adicionarManutencao
-            } else {
-                // A função adicionarManutencao já deve mostrar feedback de erro interno se necessário
-            }
+        // === ATUALIZA A DIV DE DICAS GERAIS NA INTERFACE COM OS DADOS ===
+        let htmlDicas = "<h4>Dicas Gerais de Manutenção:</h4>"; // Título para a lista
+        if (dicas && Array.isArray(dicas) && dicas.length > 0) { // Verifica se recebeu um array não vazio de dicas
+            htmlDicas += "<ul>"; // Começa uma lista HTML
+            dicas.forEach(dica => {
+                // Para cada dica no array, cria um item na lista HTML.
+                // Verificação extra caso algum item no array não seja um objeto com .dica.
+                htmlDicas += `<li>${dica && dica.dica ? dica.dica : 'Erro ao carregar item da dica.'}</li>`;
+            });
+            htmlDicas += "</ul>"; // Fecha a lista HTML
         } else {
-            mostrarFeedback(`Dados da manutenção inválidos: ${validacao.erros.join(', ')}`, 'error');
+             // Mensagem se o array veio vazio (nenhuma dica cadastrada no backend para esta rota)
+             htmlDicas += "<p>Nenhuma dica geral de manutenção disponível no momento.</p>";
         }
-    }
-});
+         // Atualiza a div correta no HTML com o conteúdo gerado, mas só se a div existir.
+         if(divListaDicasGerais) divListaDicasGerais.innerHTML = htmlDicas;
+        // ===============================================
 
-sidebarMenu.addEventListener('click', (e) => {
-    if (e.target.dataset.action === 'mostrarFormAddVeiculo' && e.target.closest('li.sidebar-action a')) {
-        e.preventDefault();
-        mostrarFormAddVeiculo();
+    } catch (error) {
+        // === TRATA QUALQUER ERRO NA BUSCA DE DICAS GERAIS ===
+        console.error("[FRONTEND] Erro ao buscar dicas gerais:", error);
+        // Mostra a mensagem de erro na div de dicas gerais.
+         exibirMensagemDicasGerais(`Erro ao buscar dicas gerais: ${error.message}`, true);
     }
-});
-
-// INICIALIZAÇÃO
-function init() {
-    console.log("Iniciando Garagem Inteligente Interativa...");
-    carregarGaragem();
-    popularSidebar();
-    inicializarListenersDeToggleChuva();
-
-    if (Object.keys(garagem).length > 0) {
-        // Seleciona o primeiro veículo da lista ordenada por modelo para exibir inicialmente
-        const primeiraChave = Object.keys(garagem).sort((a, b) => {
-            const veiculoA = garagem[a];
-            const veiculoB = garagem[b];
-            if (veiculoA && veiculoB && veiculoA.modelo && veiculoB.modelo) {
-                return veiculoA.modelo.localeCompare(veiculoB.modelo);
-            }
-            return 0; // Fallback se modelo não existir
-        })[0];
-        if (primeiraChave) mostrarVeiculo(primeiraChave);
-        else mostrarWelcome(); // Caso não haja chaves válidas
-    } else {
-        mostrarWelcome();
-    }
-
-    // Ajusta a visibilidade do campo placa no formulário de adicionar, baseado no tipo selecionado inicialmente (nenhum)
-    const placaGroup = addPlacaInput.closest('.form-group');
-    if (addTipoSelect.value === 'bicicleta') { // Verifica o valor atual do select
-        placaGroup.style.display = 'none';
-        addPlacaInput.required = false;
-        addPlacaInput.disabled = true;
-    } else {
-        placaGroup.style.display = 'block';
-        addPlacaInput.required = true;
-        addPlacaInput.disabled = false;
-    }
-    console.log("Garagem Inteligente pronta!");
 }
 
-document.addEventListener('DOMContentLoaded', init);
+// === Função para buscar Dicas de Manutenção por Tipo de Veículo ===
+// Esta função é chamada passando o tipo de veículo (ex: buscarDicasPorTipo('carro')).
+// Ela é chamada, por exemplo, quando botões específicos (carro, moto) são clicados.
+async function buscarDicasPorTipo(tipoVeiculo) {
+    // Validação simples para garantir que um tipo foi passado.
+    if (!tipoVeiculo || typeof tipoVeiculo !== 'string') {
+         console.warn("[FRONTEND] Chamada inválida para buscarDicasPorTipo. Um tipo de veículo (string) deve ser fornecido.");
+         exibirMensagemDicasPorTipo('Erro interno: Tipo de veículo inválido para buscar dicas.', true);
+         return; // Para a execução.
+    }
+    console.log(`[FRONTEND] Iniciando busca por dicas para "${tipoVeiculo}" no backend: ${backendUrl}/api/dicas-manutencao/${tipoVeiculo}`);
+    // Mostra mensagem de loading na área correta, indicando para qual tipo está buscando.
+    exibirMensagemDicasPorTipo(`Carregando dicas para ${tipoVeiculo}...`);
+
+     try {
+        // === CHAMA O ENDPOINT ESPECÍFICO DO NOSSO BACKEND PARA DICAS POR TIPO ===
+        // Passamos o `tipoVeiculo` na URL como parâmetro de rota para o backend.
+        const response = await fetch(`${backendUrl}/api/dicas-manutencao/${tipoVeiculo.toLowerCase()}`); // Manda pra lowercase só por segurança
+
+        // === VERIFICA A RESPOSTA DO NOSSO BACKEND ===
+        if (!response.ok) {
+            // Se o backend retornou um erro (por exemplo, 404 Not Found se o tipo não existir no backend,
+            // ou outro erro se acontecer algum problema interno lá).
+            const errorData = await response.json(); // Tenta ler a resposta de erro JSON do backend.
+            const errorMessage = errorData.error || `Erro ao buscar dicas para ${tipoVeiculo} (Status: ${response.status}).`;
+            throw new Error(errorMessage); // Lança o erro para ser pego pelo bloco `catch`.
+        }
+
+        // Se a resposta do backend foi OK (status 200), lê os dados JSON.
+        // Nosso backend configurou esta rota para sempre retornar um array de dicas para o tipo se ele existe (mesmo que o array esteja vazio).
+        const dicas = await response.json(); // Deveria ser um array de objetos ou [].
+        console.log(`[FRONTEND] Dicas para "${tipoVeiculo}" recebidas do backend:`, dicas);
+
+         // === ATUALIZA A DIV DE DICAS POR TIPO NA INTERFACE COM OS DADOS ===
+        let htmlDicas = `<h4>Dicas para ${tipoVeiculo}:</h4>`; // Título para a lista
+        // Verifica se o que recebemos é um array, não está vazio, e se os itens parecem corretos.
+        if (dicas && Array.isArray(dicas) && dicas.length > 0) {
+             htmlDicas += "<ul>"; // Começa lista
+             dicas.forEach(dica => {
+                 // Para cada dica no array, cria um item de lista. Verificação extra de segurança.
+                 htmlDicas += `<li>${dica && dica.dica ? dica.dica : 'Erro ao carregar item da dica.'}</li>`;
+             });
+             htmlDicas += "</ul>"; // Fecha lista
+        } else {
+             // Mensagem se o array veio vazio (tipo existe no backend mas não tem dicas) ou se deu algum outro problema.
+             // NOTA: Se o tipo de veículo NÃO existir no backend, o backend deve retornar 404, e isso já foi tratado pelo `catch`.
+             htmlDicas += `<p>Nenhuma dica específica encontrada para o tipo "${tipoVeiculo}" no momento.</p>`;
+        }
+         // Atualiza a div correta no HTML com o conteúdo gerado, mas só se ela existir.
+         if(divListaDicasPorTipo) divListaDicasPorTipo.innerHTML = htmlDicas;
+        // ===============================================
+
+    } catch (error) {
+        // === TRATA QUALQUER ERRO NA BUSCA DE DICAS POR TIPO ===
+        console.error(`[FRONTEND] Erro ao buscar dicas por tipo (${tipoVeiculo}):`, error);
+        // Mostra a mensagem de erro na div de dicas por tipo.
+        exibirMensagemDicasPorTipo(`Erro ao buscar dicas para ${tipoVeiculo}: ${error.message}`, true);
+    }
+}
+
+
+// ===========================================================================
+//         CONECTA BOTÕES DO HTML COM AS FUNÇÕES JS DE DICAS
+//         Verifica se os botões de Dicas de Manutenção foram encontrados no HTML
+//         e adiciona os 'listeners' de clique neles.
+// ===========================================================================
+
+// --- Conecta o botão de Dicas Gerais com a função ---
+// Verifica se o elemento com o ID 'btn-buscar-dicas-gerais' existe no HTML.
+if (botaoBuscarDicasGerais) {
+    console.log("[FRONTEND] Botão 'Dicas Gerais' (ID: 'btn-buscar-dicas-gerais') encontrado. Conectando...");
+    // Adiciona um 'ouvinte': quando o botão é clicado, executa a função `buscarDicasGerais`.
+    botaoBuscarDicasGerais.addEventListener("click", buscarDicasGerais);
+} else {
+     // Mensagem de aviso se o botão não foi encontrado. Ajuda a gente a corrigir o HTML se necessário.
+     console.warn("[FRONTEND] Elemento com ID 'btn-buscar-dicas-gerais' NÃO encontrado no HTML. A função de buscar dicas gerais não será ativada por botão.");
+}
+
+// --- Conecta o botão de Dicas para Carro com a função ---
+// Verifica se o elemento com o ID 'btn-buscar-dicas-carro' existe no HTML.
+if (botaoBuscarDicasCarro) {
+     console.log("[FRONTEND] Botão 'Dicas para Carro' (ID: 'btn-buscar-dicas-carro') encontrado. Conectando...");
+    // Adiciona um 'ouvinte'. Quando o botão é clicado, executamos UMA PEQUENA FUNÇÃO () => {...}.
+    // Esta pequena função chama a função `buscarDicasPorTipo` passando a string "carro" como argumento.
+    // Precisamos dessa função "intermediária" porque `addEventListener` espera uma função que ele execute, e `buscarDicasPorTipo("carro")` EXECUTARIA a função NA HORA, e não SÓ QUANDO CLICADO.
+    botaoBuscarDicasCarro.addEventListener("click", () => buscarDicasPorTipo("carro"));
+} else {
+    console.warn("[FRONTEND] Elemento com ID 'btn-buscar-dicas-carro' NÃO encontrado no HTML.");
+}
+
+// --- Conecta o botão de Dicas para Moto com a função ---
+if (botaoBuscarDicasMoto) {
+     console.log("[FRONTEND] Botão 'Dicas para Moto' (ID: 'btn-buscar-dicas-moto') encontrado. Conectando...");
+     // Similar ao carro, chama buscarDicasPorTipo passando "moto".
+     botaoBuscarDicasMoto.addEventListener("click", () => buscarDicasPorTipo("moto"));
+} else {
+    console.warn("[FRONTEND] Elemento com ID 'btn-buscar-dicas-moto' NÃO encontrado no HTML.");
+}
+
+// --- Conecta o botão de Dicas para Caminhão com a função ---
+// Exemplo: Adicione este if/else se você criar um botão com o ID 'btn-buscar-dicas-caminhao' no HTML.
+if (botaoBuscarDicasCaminhao) {
+     console.log("[FRONTEND] Botão 'Dicas para Caminhão' (ID: 'btn-buscar-dicas-caminhao') encontrado. Conectando...");
+     // Similar aos outros tipos, chama buscarDicasPorTipo passando "caminhao".
+     botaoBuscarDicasCaminhao.addEventListener("click", () => buscarDicasPorTipo("caminhao"));
+} else {
+     console.warn("[FRONTEND] Elemento com ID 'btn-buscar-dicas-caminhao' NÃO encontrado no HTML.");
+}
+
+// === Adicione mais blocos 'if' e 'addEventListener' aqui para conectar outros botões de tipo se criar mais no HTML ===
+
+// --- DICA IMPORTANTE: ESTRUTURA DE EXEMPLO NO SEU index.html ---
+/*
+    Para que o código acima funcione, seu arquivo index.html precisa ter elementos HTML com os IDs corretos.
+    Veja um exemplo de como poderia ser a estrutura das seções de Clima e Dicas:
+
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Minha Garagem Inteligente</title>
+        // Você pode ter seu arquivo de estilos CSS aqui <link rel="stylesheet" href="style.css">
+    </head>
+    <body>
+
+        <h1>Garagem Inteligente da Luana!</h1> // :)
+
+        <section id="secao-clima">
+            <h2>Previsão do Tempo da Garagem</h2>
+            <div>
+                <input type="text" id="cidade-previsao-input-bicicleta" placeholder="Ex: Sao Paulo, BR">
+                <button id="verificar-clima-btn-bicicleta">Buscar Clima</button>
+            </div>
+            // Área onde o resultado da previsão será exibido.
+            <div id="previsao-tempo-resultado-bicicleta" style="margin-top: 15px; padding: 15px; border: 1px solid #ccc; min-height: 50px;">
+                <p>Resultado da previsão aparecerá aqui...</p>
+            </div>
+        </section>
+
+        <hr style="margin: 30px 0;"> // Uma linha visual para separar as seções
+
+        <section id="secao-dicas-manutencao">
+            <h2>Dicas de Manutenção</h2>
+            <p>Escolha um tipo ou veja dicas gerais:</p>
+            <div> // Botões para acionar as buscas de dicas
+                <button id="btn-buscar-dicas-gerais">Dicas Gerais</button>
+                <button id="btn-buscar-dicas-carro">Para Carros</button>
+                <button id="btn-buscar-dicas-moto">Para Motos</button>
+                <button id="btn-buscar-dicas-caminhao">Para Caminhões</button>
+                // Adicione aqui outros botões de tipo se necessário
+            </div>
+
+            // Áreas onde os resultados das dicas serão exibidos.
+            // Podem estar juntas ou separadas, dependendo do seu design.
+            <div id="lista-dicas-gerais-div" style="margin-top: 15px; padding: 15px; border: 1px dashed #ddd; min-height: 30px;">
+                 // Resultado das dicas gerais aparecerá aqui...
+            </div>
+             <div id="lista-dicas-por-tipo-div" style="margin-top: 15px; padding: 15px; border: 1px dashed #ddd; min-height: 30px;">
+                 // Resultado das dicas por tipo aparecerá aqui...
+            </div>
+        </section>
+
+
+        // <<<<< VINCULE SEU ARQUIVO JAVASCRIPT AQUI! <<<<<
+        // Este script DEVE estar após os elementos HTML que ele manipula (como os botões e divs),
+        // ou usar o evento 'DOMContentLoaded' se estiver no <head>.
+        // Geralmente colocar antes de fechar o </body> é a forma mais simples e segura.
+        // VERIFIQUE SE O NOME NO `src` CORRESPONDE AO NOME REAL DO SEU ARQUIVO (client.js, script.js, etc.)!
+        <script src="client.js"></script>
+
+    </body>
+    </html>
+*/
+// =====================================================================================
