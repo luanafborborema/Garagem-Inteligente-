@@ -2,54 +2,353 @@
 <html lang="pt-BR">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Garagem Inteligente Unificada</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+    <style>
+        /* Mantenha aqui seu CSS customizado do style.css se quiser */
+        .status-desligado { color: red; }
+        .status-ligado { color: green; }
+        .status-parada { color: gray; }
+        .previsao-tempo-resultado {
+            min-height: 100px;
+            background: #f0f8ff;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .filtro-dias-btn.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+        .veiculo-img {
+            margin-bottom: 15px;
+        }
+    </style>
 </head>
 
 <body>
-    <div id="app-container">
-        <nav id="sidebar">
+    <div id="app-container" class="container my-3">
+        <nav id="sidebar" class="mb-4">
             <h2>Garagem</h2>
-            <ul id="sidebar-menu">
+            <ul id="sidebar-menu" class="list-unstyled">
                 <li class="sidebar-action"><a href="#" data-action="mostrarFormAddVeiculo">➕ Adicionar Veículo</a></li>
             </ul>
         </nav>
 
         <main id="main-content">
-            <div id="feedback-message" class="feedback" style="display: none;"></div>
+            <div id="feedback-message" class="feedback alert alert-info" style="display: none;"></div>
 
             <div id="welcome-message">
                 <h1>Bem-vinda à sua Garagem Inteligente!</h1>
                 <p>Selecione um veículo no menu ou adicione um novo.</p>
             </div>
 
-            <!-- Seus containers de veículos continuam aqui -->
-            <!-- Nenhum container precisa ser alterado se IDs como: cidade-previsao-input-carro, verificar-clima-btn-carro, previsao-tempo-resultado-carro etc. estiverem corretos -->
+            <div id="add-veiculo-form-container" class="form-container" style="display: none;">
+                <h2>Adicionar Novo Veículo</h2>
+                <form id="add-veiculo-form" class="mb-4">
+                    <div class="mb-3">
+                        <label for="add-tipo" class="form-label">Tipo de Veículo:</label>
+                        <select id="add-tipo" name="tipo" class="form-select" required>
+                            <option value="" disabled selected>Selecione...</option>
+                            <option value="carro">Carro Casual</option>
+                            <option value="esportivo">Carro Esportivo</option>
+                            <option value="caminhao">Caminhão</option>
+                            <option value="moto">Moto</option>
+                            <option value="bicicleta">Bicicleta</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-modelo" class="form-label">Modelo:</label>
+                        <input type="text" id="add-modelo" name="modelo" class="form-control" placeholder="Ex: Fusca Azul" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-placa" class="form-label">Placa:</label>
+                        <input type="text" id="add-placa" name="placa" class="form-control" placeholder="Ex: ABC1234" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="add-cor" class="form-label">Cor:</label>
+                        <input type="text" id="add-cor" name="cor" class="form-control" placeholder="Ex: Azul Metálico" required />
+                    </div>
+                    <div id="add-caminhao-capacidade-group" class="mb-3" style="display: none;">
+                        <label for="add-capacidade" class="form-label">Capacidade Carga (kg):</label>
+                        <input type="number" id="add-capacidade" name="capacidade" class="form-control" placeholder="Ex: 5000" min="0" step="100" />
+                    </div>
+                    <button type="submit" class="btn btn-success me-2">Salvar Novo Veículo</button>
+                    <button type="button" id="cancel-add-veiculo" class="btn btn-secondary">Cancelar</button>
+                </form>
+            </div>
 
-            <!-- Para economizar espaço, estou focando só na parte do clima da bicicleta como exemplo completo. Repita a mesma estrutura para os outros -->
+            <!-- VEÍCULOS: mantenha o conteúdo que você enviou, com IDs e classes iguais -->
 
+            <!-- Carro Casual -->
+            <div id="carro-container" class="veiculo-container" style="display: none;">
+                <h2>Carro Casual</h2>
+                <img id="carro-img" src="imagens/carro.png" alt="Carro" width="180" class="veiculo-img" />
+                <p><strong>Modelo:</strong> <span id="carro-modelo">...</span></p>
+                <p><strong>Placa:</strong> <span id="carro-placa">...</span></p>
+                <p><strong>Cor:</strong> <span id="carro-cor">...</span></p>
+                <p><strong>Status:</strong> <span id="carro-status" class="status-desligado">Desligado</span></p>
+                <p><strong>Velocidade:</strong> <span id="carro-velocidade">0</span> km/h</p>
+                <div class="actions mb-3">
+                    <button data-acao="ligar" data-tipo="carro" class="btn btn-sm btn-success">Ligar</button>
+                    <button data-acao="desligar" data-tipo="carro" class="btn btn-sm btn-danger">Desligar</button>
+                    <button data-acao="acelerar" data-tipo="carro" class="btn btn-sm btn-info">Acelerar</button>
+                    <button data-acao="frear" data-tipo="carro" class="btn btn-sm btn-warning">Frear</button>
+                    <button data-acao="buzinar" data-tipo="carro" class="btn btn-sm btn-secondary">Buzinar</button>
+                </div>
+
+                <div class="api-details-section mb-4">
+                    <h5>Previsão do Tempo para <span id="nome-cidade-previsao-carro">[Cidade]</span></h5>
+                    <div class="mb-2">
+                        <input type="text" id="cidade-previsao-input-carro" class="form-control form-control-sm" placeholder="Digite uma cidade..." />
+                    </div>
+                    <button id="verificar-clima-btn-carro" class="btn btn-primary btn-sm verificar-clima-btn-veiculo" data-veiculo-tipo="carro">Ver Previsão</button>
+
+                    <div class="filtros-previsao mt-2 mb-2">
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn" data-veiculo-tipo="carro" data-dias="1">Hoje</button>
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn" data-veiculo-tipo="carro" data-dias="3">3 Dias</button>
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn active" data-veiculo-tipo="carro" data-dias="5">5 Dias</button>
+                    </div>
+                    <div class="form-check form-switch mt-2 mb-2">
+                        <input class="form-check-input toggle-destaque-chuva" type="checkbox" role="switch" id="destaque-chuva-carro" data-veiculo-tipo="carro" />
+                        <label class="form-check-label" for="destaque-chuva-carro">Destacar chuva</label>
+                    </div>
+
+                    <div id="previsao-tempo-resultado-carro" class="previsao-tempo-resultado">
+                        <p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>
+                    </div>
+                </div>
+
+                <div class="manutencao-section">
+                    <h4>Manutenção</h4>
+                    <form class="manutencao-form" data-tipo="carro">
+                        <h5>Registrar/Agendar</h5>
+                        <input type="datetime-local" id="carro-manutencao-data" class="form-control mb-2" required />
+                        <input type="text" id="carro-manutencao-tipo" class="form-control mb-2" placeholder="Tipo" required />
+                        <input type="number" id="carro-manutencao-custo" class="form-control mb-2" placeholder="Custo (R$)" min="0" step="0.01" required />
+                        <textarea id="carro-manutencao-descricao" class="form-control mb-2" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" class="btn btn-sm btn-outline-success">Adicionar Manutenção</button>
+                    </form>
+                    <div class="manutencao-display">
+                        <h5>Histórico</h5>
+                        <ul id="carro-historico-lista"><li>Nenhum registro.</li></ul>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Agendamentos</h5>
+                        <ul id="carro-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carro Esportivo -->
+            <div id="esportivo-container" class="veiculo-container" style="display: none;">
+                <h2>Carro Esportivo</h2>
+                <img id="esportivo-img" src="imagens/cesportivo.png" alt="Esportivo" width="180" class="veiculo-img" />
+                <p><strong>Modelo:</strong> <span id="esportivo-modelo">...</span></p>
+                <p><strong>Placa:</strong> <span id="esportivo-placa">...</span></p>
+                <p><strong>Cor:</strong> <span id="esportivo-cor">...</span></p>
+                <p><strong>Status:</strong> <span id="esportivo-status" class="status-desligado">Desligado</span></p>
+                <p><strong>Velocidade:</strong> <span id="esportivo-velocidade">0</span> km/h</p>
+                <p><strong>Turbo:</strong> <span id="esportivo-turbo">Desativado</span></p>
+                <div class="actions mb-3">
+                    <button data-acao="ligar" data-tipo="esportivo" class="btn btn-sm btn-success">Ligar</button>
+                    <button data-acao="desligar" data-tipo="esportivo" class="btn btn-sm btn-danger">Desligar</button>
+                    <button data-acao="acelerar" data-tipo="esportivo" class="btn btn-sm btn-info">Acelerar</button>
+                    <button data-acao="frear" data-tipo="esportivo" class="btn btn-sm btn-warning">Frear</button>
+                    <button data-acao="buzinar" data-tipo="esportivo" class="btn btn-sm btn-secondary">Buzinar</button>
+                    <button data-acao="ativarTurbo" data-tipo="esportivo" class="btn btn-sm btn-warning">Turbo ON</button>
+                    <button data-acao="desativarTurbo" data-tipo="esportivo" class="btn btn-sm btn-outline-warning">Turbo OFF</button>
+                </div>
+
+                <div class="api-details-section mb-4">
+                    <h5>Previsão do Tempo para <span id="nome-cidade-previsao-esportivo">[Cidade]</span></h5>
+                    <div class="mb-2">
+                        <input type="text" id="cidade-previsao-input-esportivo" class="form-control form-control-sm" placeholder="Digite uma cidade..." />
+                    </div>
+                    <button id="verificar-clima-btn-esportivo" class="btn btn-primary btn-sm verificar-clima-btn-veiculo" data-veiculo-tipo="esportivo">Ver Previsão</button>
+
+                    <div class="filtros-previsao mt-2 mb-2">
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn" data-veiculo-tipo="esportivo" data-dias="1">Hoje</button>
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn" data-veiculo-tipo="esportivo" data-dias="3">3 Dias</button>
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn active" data-veiculo-tipo="esportivo" data-dias="5">5 Dias</button>
+                    </div>
+                    <div class="form-check form-switch mt-2 mb-2">
+                        <input class="form-check-input toggle-destaque-chuva" type="checkbox" role="switch" id="destaque-chuva-esportivo" data-veiculo-tipo="esportivo" />
+                        <label class="form-check-label" for="destaque-chuva-esportivo">Destacar chuva</label>
+                    </div>
+
+                    <div id="previsao-tempo-resultado-esportivo" class="previsao-tempo-resultado">
+                        <p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>
+                    </div>
+                </div>
+
+                <div class="manutencao-section">
+                    <h4>Manutenção</h4>
+                    <form class="manutencao-form" data-tipo="esportivo">
+                        <h5>Registrar/Agendar</h5>
+                        <input type="datetime-local" id="esportivo-manutencao-data" class="form-control mb-2" required />
+                        <input type="text" id="esportivo-manutencao-tipo" class="form-control mb-2" placeholder="Tipo" required />
+                        <input type="number" id="esportivo-manutencao-custo" class="form-control mb-2" placeholder="Custo (R$)" min="0" step="0.01" required />
+                        <textarea id="esportivo-manutencao-descricao" class="form-control mb-2" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" class="btn btn-sm btn-outline-success">Adicionar Manutenção</button>
+                    </form>
+                    <div class="manutencao-display">
+                        <h5>Histórico</h5>
+                        <ul id="esportivo-historico-lista"><li>Nenhum registro.</li></ul>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Agendamentos</h5>
+                        <ul id="esportivo-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Caminhão -->
+            <div id="caminhao-container" class="veiculo-container" style="display: none;">
+                <h2>Caminhão</h2>
+                <img id="caminhao-img" src="imagens/caminhao.png" alt="Caminhão" width="180" class="veiculo-img" />
+                <p><strong>Modelo:</strong> <span id="caminhao-modelo">...</span></p>
+                <p><strong>Placa:</strong> <span id="caminhao-placa">...</span></p>
+                <p><strong>Cor:</strong> <span id="caminhao-cor">...</span></p>
+                <p><strong>Status:</strong> <span id="caminhao-status" class="status-desligado">Desligado</span></p>
+                <p><strong>Velocidade:</strong> <span id="caminhao-velocidade">0</span> km/h</p>
+                <p><strong>Carga:</strong> <span id="caminhao-carga">0</span> / <span id="caminhao-capacidade">5000</span> kg</p>
+                <div class="actions mb-3">
+                    <button data-acao="ligar" data-tipo="caminhao" class="btn btn-sm btn-success">Ligar</button>
+                    <button data-acao="desligar" data-tipo="caminhao" class="btn btn-sm btn-danger">Desligar</button>
+                    <button data-acao="acelerar" data-tipo="caminhao" class="btn btn-sm btn-info">Acelerar</button>
+                    <button data-acao="frear" data-tipo="caminhao" class="btn btn-sm btn-warning">Frear</button>
+                    <button data-acao="buzinar" data-tipo="caminhao" class="btn btn-sm btn-secondary">Buzinar</button>
+                    <label for="caminhao-carga-input" class="form-label d-inline-block ms-3 me-2" style="width: auto;">Carga(kg):</label>
+                    <input type="number" id="caminhao-carga-input" class="form-control form-control-sm d-inline-block" style="width: 100px;" min="1" step="1" />
+                    <button data-acao="carregar" data-tipo="caminhao" class="btn btn-sm btn-outline-primary">Carregar</button>
+                    <button data-acao="descarregar" data-tipo="caminhao" class="btn btn-sm btn-outline-info">Descarregar</button>
+                </div>
+
+                <div class="api-details-section mb-4">
+                    <h5>Previsão do Tempo para <span id="nome-cidade-previsao-caminhao">[Cidade]</span></h5>
+                    <div class="mb-2">
+                        <input type="text" id="cidade-previsao-input-caminhao" class="form-control form-control-sm" placeholder="Digite uma cidade..." />
+                    </div>
+                    <button id="verificar-clima-btn-caminhao" class="btn btn-primary btn-sm verificar-clima-btn-veiculo" data-veiculo-tipo="caminhao">Ver Previsão</button>
+
+                    <div class="filtros-previsao mt-2 mb-2">
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn" data-veiculo-tipo="caminhao" data-dias="1">Hoje</button>
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn" data-veiculo-tipo="caminhao" data-dias="3">3 Dias</button>
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn active" data-veiculo-tipo="caminhao" data-dias="5">5 Dias</button>
+                    </div>
+                    <div class="form-check form-switch mt-2 mb-2">
+                        <input class="form-check-input toggle-destaque-chuva" type="checkbox" role="switch" id="destaque-chuva-caminhao" data-veiculo-tipo="caminhao" />
+                        <label class="form-check-label" for="destaque-chuva-caminhao">Destacar chuva</label>
+                    </div>
+
+                    <div id="previsao-tempo-resultado-caminhao" class="previsao-tempo-resultado">
+                        <p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>
+                    </div>
+                </div>
+
+                <div class="manutencao-section">
+                    <h4>Manutenção</h4>
+                    <form class="manutencao-form" data-tipo="caminhao">
+                        <h5>Registrar/Agendar</h5>
+                        <input type="datetime-local" id="caminhao-manutencao-data" class="form-control mb-2" required />
+                        <input type="text" id="caminhao-manutencao-tipo" class="form-control mb-2" placeholder="Tipo" required />
+                        <input type="number" id="caminhao-manutencao-custo" class="form-control mb-2" placeholder="Custo (R$)" min="0" step="0.01" required />
+                        <textarea id="caminhao-manutencao-descricao" class="form-control mb-2" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" class="btn btn-sm btn-outline-success">Adicionar Manutenção</button>
+                    </form>
+                    <div class="manutencao-display">
+                        <h5>Histórico</h5>
+                        <ul id="caminhao-historico-lista"><li>Nenhum registro.</li></ul>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Agendamentos</h5>
+                        <ul id="caminhao-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Moto -->
+            <div id="moto-container" class="veiculo-container" style="display: none;">
+                <h2>Moto</h2>
+                <img id="moto-img" src="imagens/moto.png" alt="Moto" width="180" class="veiculo-img" />
+                <p><strong>Modelo:</strong> <span id="moto-modelo">...</span></p>
+                <p><strong>Placa:</strong> <span id="moto-placa">...</span></p>
+                <p><strong>Cor:</strong> <span id="moto-cor">...</span></p>
+                <p><strong>Status:</strong> <span id="moto-status" class="status-desligado">Desligado</span></p>
+                <p><strong>Velocidade:</strong> <span id="moto-velocidade">0</span> km/h</p>
+                <div class="actions mb-3">
+                    <button data-acao="ligar" data-tipo="moto" class="btn btn-sm btn-success">Ligar</button>
+                    <button data-acao="desligar" data-tipo="moto" class="btn btn-sm btn-danger">Desligar</button>
+                    <button data-acao="acelerar" data-tipo="moto" class="btn btn-sm btn-info">Acelerar</button>
+                    <button data-acao="frear" data-tipo="moto" class="btn btn-sm btn-warning">Frear</button>
+                    <button data-acao="buzinar" data-tipo="moto" class="btn btn-sm btn-secondary">Buzinar</button>
+                </div>
+
+                <div class="api-details-section mb-4">
+                    <h5>Previsão do Tempo para <span id="nome-cidade-previsao-moto">[Cidade]</span></h5>
+                    <div class="mb-2">
+                        <input type="text" id="cidade-previsao-input-moto" class="form-control form-control-sm" placeholder="Digite uma cidade..." />
+                    </div>
+                    <button id="verificar-clima-btn-moto" class="btn btn-primary btn-sm verificar-clima-btn-veiculo" data-veiculo-tipo="moto">Ver Previsão</button>
+
+                    <div class="filtros-previsao mt-2 mb-2">
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn" data-veiculo-tipo="moto" data-dias="1">Hoje</button>
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn" data-veiculo-tipo="moto" data-dias="3">3 Dias</button>
+                        <button class="btn btn-outline-secondary btn-sm filtro-dias-btn active" data-veiculo-tipo="moto" data-dias="5">5 Dias</button>
+                    </div>
+                    <div class="form-check form-switch mt-2 mb-2">
+                        <input class="form-check-input toggle-destaque-chuva" type="checkbox" role="switch" id="destaque-chuva-moto" data-veiculo-tipo="moto" />
+                        <label class="form-check-label" for="destaque-chuva-moto">Destacar chuva</label>
+                    </div>
+
+                    <div id="previsao-tempo-resultado-moto" class="previsao-tempo-resultado">
+                        <p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>
+                    </div>
+                </div>
+
+                <div class="manutencao-section">
+                    <h4>Manutenção</h4>
+                    <form class="manutencao-form" data-tipo="moto">
+                        <h5>Registrar/Agendar</h5>
+                        <input type="datetime-local" id="moto-manutencao-data" class="form-control mb-2" required />
+                        <input type="text" id="moto-manutencao-tipo" class="form-control mb-2" placeholder="Tipo" required />
+                        <input type="number" id="moto-manutencao-custo" class="form-control mb-2" placeholder="Custo (R$)" min="0" step="0.01" required />
+                        <textarea id="moto-manutencao-descricao" class="form-control mb-2" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" class="btn btn-sm btn-outline-success">Adicionar Manutenção</button>
+                    </form>
+                    <div class="manutencao-display">
+                        <h5>Histórico</h5>
+                        <ul id="moto-historico-lista"><li>Nenhum registro.</li></ul>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Agendamentos</h5>
+                        <ul id="moto-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bicicleta -->
             <div id="bicicleta-container" class="veiculo-container" style="display: none;">
                 <h2>Bicicleta</h2>
-                <img id="bicicleta-img" src="imagens/bike.avif" alt="Bicicleta" width="180" class="veiculo-img">
+                <img id="bicicleta-img" src="imagens/bicicleta.png" alt="Bicicleta" width="180" class="veiculo-img" />
                 <p><strong>Modelo:</strong> <span id="bicicleta-modelo">...</span></p>
-                <p><strong>Placa:</strong> <span id="bicicleta-placa">N/A</span></p>
                 <p><strong>Cor:</strong> <span id="bicicleta-cor">...</span></p>
                 <p><strong>Status:</strong> <span id="bicicleta-status" class="status-parada">Parada</span></p>
                 <p><strong>Velocidade:</strong> <span id="bicicleta-velocidade">0</span> km/h</p>
-                <div class="actions">
-                    <button data-acao="pedalar" data-tipo="bicicleta" class="btn btn-sm btn-info">Pedalar</button>
+                <div class="actions mb-3">
+                    <button data-acao="pedalar" data-tipo="bicicleta" class="btn btn-sm btn-success">Pedalar</button>
                     <button data-acao="frear" data-tipo="bicicleta" class="btn btn-sm btn-warning">Frear</button>
-                    <button data-acao="buzinar" data-tipo="bicicleta" class="btn btn-sm btn-secondary">Campainha</button>
+                    <button data-acao="buzinar" data-tipo="bicicleta" class="btn btn-sm btn-secondary">Buzinar</button>
                 </div>
 
-                <div class="api-details-section">
+                <div class="api-details-section mb-4">
                     <h5>Previsão do Tempo para <span id="nome-cidade-previsao-bicicleta">[Cidade]</span></h5>
-                    <div class="form-group mb-2">
-                        <label for="cidade-previsao-input-bicicleta" class="form-label visually-hidden">Cidade:</label>
-                        <input type="text" id="cidade-previsao-input-bicicleta" class="form-control form-control-sm" placeholder="Digite uma cidade...">
+                    <div class="mb-2">
+                        <input type="text" id="cidade-previsao-input-bicicleta" class="form-control form-control-sm" placeholder="Digite uma cidade..." />
                     </div>
                     <button id="verificar-clima-btn-bicicleta" class="btn btn-primary btn-sm verificar-clima-btn-veiculo" data-veiculo-tipo="bicicleta">Ver Previsão</button>
 
@@ -59,7 +358,7 @@
                         <button class="btn btn-outline-secondary btn-sm filtro-dias-btn active" data-veiculo-tipo="bicicleta" data-dias="5">5 Dias</button>
                     </div>
                     <div class="form-check form-switch mt-2 mb-2">
-                        <input class="form-check-input toggle-destaque-chuva" type="checkbox" role="switch" id="destaque-chuva-bicicleta" data-veiculo-tipo="bicicleta">
+                        <input class="form-check-input toggle-destaque-chuva" type="checkbox" role="switch" id="destaque-chuva-bicicleta" data-veiculo-tipo="bicicleta" />
                         <label class="form-check-label" for="destaque-chuva-bicicleta">Destacar chuva</label>
                     </div>
 
@@ -67,25 +366,564 @@
                         <p class="text-muted">Digite uma cidade e clique em "Ver Previsão".</p>
                     </div>
                 </div>
+
+                <div class="manutencao-section">
+                    <h4>Manutenção</h4>
+                    <form class="manutencao-form" data-tipo="bicicleta">
+                        <h5>Registrar/Agendar</h5>
+                        <input type="datetime-local" id="bicicleta-manutencao-data" class="form-control mb-2" required />
+                        <input type="text" id="bicicleta-manutencao-tipo" class="form-control mb-2" placeholder="Tipo" required />
+                        <input type="number" id="bicicleta-manutencao-custo" class="form-control mb-2" placeholder="Custo (R$)" min="0" step="0.01" required />
+                        <textarea id="bicicleta-manutencao-descricao" class="form-control mb-2" placeholder="Descrição (Opcional)"></textarea>
+                        <button type="submit" class="btn btn-sm btn-outline-success">Adicionar Manutenção</button>
+                    </form>
+                    <div class="manutencao-display">
+                        <h5>Histórico</h5>
+                        <ul id="bicicleta-historico-lista"><li>Nenhum registro.</li></ul>
+                    </div>
+                    <div class="manutencao-display">
+                        <h5>Agendamentos</h5>
+                        <ul id="bicicleta-agendamentos-lista"><li>Nenhum agendamento.</li></ul>
+                    </div>
+                </div>
             </div>
-
-            <!-- Faça o mesmo para os outros veículos: carro, esportivo, caminhão, moto -->
-
         </main>
     </div>
 
-    <footer>
-        <p>Desenvolvido por Luana Ferreira Borborema | Assistência: AI Studio</p>
-    </footer>
+    <script>
+        // --- Chave da API do OpenWeatherMap: Troque pela sua chave ---
+        const API_KEY = 'SUA_CHAVE_AQUI';
 
-    <audio id="som-ligar" src="sons/ligar.mp3"></audio>
-    <audio id="som-desligar" src="sons/desligar.mp3"></audio>
-    <audio id="som-acelerar" src="sons/acelerar.mp3"></audio>
-    <audio id="som-frear" src="sons/frear.mp3"></audio>
-    <audio id="som-buzina" src="sons/buzina.mp3"></audio>
-    <audio id="som-campainha" src="sons/campainha.mp3"></audio>
+        // --- Estados internos para cada veículo ---
+        const veiculosEstado = {
+            carro: { ligado: false, velocidade: 0 },
+            esportivo: { ligado: false, velocidade: 0, turboAtivo: false },
+            caminhao: { ligado: false, velocidade: 0, cargaAtual: 0, capacidade: 5000 },
+            moto: { ligado: false, velocidade: 0 },
+            bicicleta: { pedalando: false, velocidade: 0 }
+        };
 
-    <script src="script.js" type="module"></script>
+        // --- Função para atualizar a exibição do status de cada veículo ---
+        function atualizarStatus(tipo) {
+            const estado = veiculosEstado[tipo];
+            const statusSpan = document.getElementById(`${tipo}-status`);
+            const velocidadeSpan = document.getElementById(`${tipo}-velocidade`);
+            if (tipo === 'bicicleta') {
+                // Bicicleta não liga/desliga, apenas pedalar ou parar
+                statusSpan.textContent = estado.pedalando ? 'Pedalando' : 'Parada';
+                statusSpan.className = estado.pedalando ? 'status-ligado' : 'status-parada';
+            } else {
+                statusSpan.textContent = estado.ligado ? 'Ligado' : 'Desligado';
+                statusSpan.className = estado.ligado ? 'status-ligado' : 'status-desligado';
+            }
+            velocidadeSpan.textContent = estado.velocidade;
+            if (tipo === 'esportivo') {
+                const turboSpan = document.getElementById('esportivo-turbo');
+                turboSpan.textContent = estado.turboAtivo ? 'Ativado' : 'Desativado';
+            }
+            if (tipo === 'caminhao') {
+                document.getElementById('caminhao-carga').textContent = estado.cargaAtual;
+                document.getElementById('caminhao-capacidade').textContent = estado.capacidade;
+            }
+        }
+
+        // --- Funções das ações dos veículos ---
+        function ligarVeiculo(tipo) {
+            const estado = veiculosEstado[tipo];
+            if (tipo === 'bicicleta') {
+                alert('Bicicleta não liga/desliga.');
+                return;
+            }
+            if (!estado.ligado) {
+                estado.ligado = true;
+                estado.velocidade = 0;
+                atualizarStatus(tipo);
+                mostrarMensagem(`O ${tipo} foi ligado.`);
+            } else {
+                mostrarMensagem(`O ${tipo} já está ligado.`);
+            }
+        }
+
+        function desligarVeiculo(tipo) {
+            const estado = veiculosEstado[tipo];
+            if (tipo === 'bicicleta') {
+                alert('Bicicleta não liga/desliga.');
+                return;
+            }
+            if (estado.ligado) {
+                estado.ligado = false;
+                estado.velocidade = 0;
+                if (tipo === 'esportivo') estado.turboAtivo = false;
+                atualizarStatus(tipo);
+                mostrarMensagem(`O ${tipo} foi desligado.`);
+            } else {
+                mostrarMensagem(`O ${tipo} já está desligado.`);
+            }
+        }
+
+        function acelerarVeiculo(tipo) {
+            const estado = veiculosEstado[tipo];
+            if (tipo === 'bicicleta') {
+                if (!estado.pedalando) {
+                    estado.pedalando = true;
+                    estado.velocidade = 10;
+                    mostrarMensagem('Você começou a pedalar a bicicleta.');
+                } else {
+                    estado.velocidade += 10;
+                    mostrarMensagem('Você acelerou a bicicleta.');
+                }
+            } else {
+                if (!estado.ligado) {
+                    mostrarMensagem(`O ${tipo} está desligado. Ligue antes de acelerar.`);
+                    return;
+                }
+                estado.velocidade += tipo === 'esportivo' && estado.turboAtivo ? 30 : 10;
+                mostrarMensagem(`O ${tipo} acelerou. Velocidade atual: ${estado.velocidade} km/h.`);
+            }
+            atualizarStatus(tipo);
+        }
+
+        function frearVeiculo(tipo) {
+            const estado = veiculosEstado[tipo];
+            if (tipo === 'bicicleta') {
+                if (!estado.pedalando) {
+                    mostrarMensagem('A bicicleta já está parada.');
+                    return;
+                }
+                estado.velocidade -= 10;
+                if (estado.velocidade <= 0) {
+                    estado.velocidade = 0;
+                    estado.pedalando = false;
+                    mostrarMensagem('A bicicleta parou.');
+                } else {
+                    mostrarMensagem(`Você freou a bicicleta. Velocidade: ${estado.velocidade} km/h.`);
+                }
+            } else {
+                if (!estado.ligado) {
+                    mostrarMensagem(`O ${tipo} já está desligado ou parado.`);
+                    return;
+                }
+                estado.velocidade -= 10;
+                if (estado.velocidade <= 0) {
+                    estado.velocidade = 0;
+                    mostrarMensagem(`O ${tipo} parou.`);
+                } else {
+                    mostrarMensagem(`O ${tipo} freou. Velocidade: ${estado.velocidade} km/h.`);
+                }
+            }
+            atualizarStatus(tipo);
+        }
+
+        function buzinarVeiculo(tipo) {
+            mostrarMensagem(`O ${tipo} está buzinando: BIP BIP!`);
+        }
+
+        function ativarTurboEsportivo() {
+            const estado = veiculosEstado['esportivo'];
+            if (!estado.ligado) {
+                mostrarMensagem('Ligue o carro esportivo antes de ativar o turbo.');
+                return;
+            }
+            estado.turboAtivo = true;
+            mostrarMensagem('Turbo ativado no carro esportivo!');
+            atualizarStatus('esportivo');
+        }
+
+        function desativarTurboEsportivo() {
+            const estado = veiculosEstado['esportivo'];
+            if (!estado.ligado) {
+                mostrarMensagem('O carro esportivo está desligado.');
+                return;
+            }
+            estado.turboAtivo = false;
+            mostrarMensagem('Turbo desativado no carro esportivo.');
+            atualizarStatus('esportivo');
+        }
+
+        function carregarCaminhao() {
+            const cargaInput = document.getElementById('caminhao-carga-input');
+            const carga = Number(cargaInput.value);
+            const estado = veiculosEstado['caminhao'];
+            if (isNaN(carga) || carga <= 0) {
+                mostrarMensagem('Informe uma carga válida para carregar.');
+                return;
+            }
+            if (estado.cargaAtual + carga > estado.capacidade) {
+                mostrarMensagem('Carga ultrapassa a capacidade máxima do caminhão.');
+                return;
+            }
+            estado.cargaAtual += carga;
+            mostrarMensagem(`Caminhão carregado com ${carga} kg. Carga atual: ${estado.cargaAtual} kg.`);
+            atualizarStatus('caminhao');
+            cargaInput.value = '';
+        }
+
+        function descarregarCaminhao() {
+            const cargaInput = document.getElementById('caminhao-carga-input');
+            const carga = Number(cargaInput.value);
+            const estado = veiculosEstado['caminhao'];
+            if (isNaN(carga) || carga <= 0) {
+                mostrarMensagem('Informe uma carga válida para descarregar.');
+                return;
+            }
+            if (carga > estado.cargaAtual) {
+                mostrarMensagem('Não há carga suficiente para descarregar.');
+                return;
+            }
+            estado.cargaAtual -= carga;
+            mostrarMensagem(`Caminhão descarregado em ${carga} kg. Carga atual: ${estado.cargaAtual} kg.`);
+            atualizarStatus('caminhao');
+            cargaInput.value = '';
+        }
+
+        // --- Função para mostrar mensagens de feedback ao usuário ---
+        function mostrarMensagem(texto) {
+            const feedback = document.getElementById('feedback-message');
+            feedback.textContent = texto;
+            feedback.style.display = 'block';
+            setTimeout(() => {
+                feedback.style.display = 'none';
+            }, 4000);
+        }
+
+        // --- Previsão do Tempo ---
+
+        // Busca do clima pela cidade e veículo
+        async function buscarPrevisaoTempo(veiculoTipo, cidade, dias, destaqueChuva) {
+            if (!cidade) {
+                alert('Informe uma cidade para buscar a previsão.');
+                return;
+            }
+            try {
+                const resultadoContainer = document.getElementById(`previsao-tempo-resultado-${veiculoTipo}`);
+                resultadoContainer.innerHTML = '<p>Carregando previsão...</p>';
+                // API OpenWeatherMap - previsão de 5 dias / 3h em 3h (é possível usar para filtro)
+                // URL de exemplo: https://api.openweathermap.org/data/2.5/forecast?q=London&appid=APIKEY&units=metric&lang=pt_br
+                const url = `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(cidade)}&appid=${API_KEY}&units=metric&lang=pt_br`;
+                const resposta = await fetch(url);
+                if (!resposta.ok) {
+                    throw new Error('Cidade não encontrada ou erro na API');
+                }
+                const dados = await resposta.json();
+
+                // Atualiza nome da cidade
+                document.getElementById(`nome-cidade-previsao-${veiculoTipo}`).textContent = dados.city.name + ', ' + dados.city.country;
+
+                // Filtrar os dias
+                // A API retorna previsão a cada 3h, vamos agrupar por dia até o limite
+                const hoje = new Date();
+                const diasPrevistos = [];
+
+                let ultimoDia = null;
+                let diaAtualData = null;
+                let diaIndex = 0;
+
+                for (const item of dados.list) {
+                    const dataItem = new Date(item.dt * 1000);
+                    if (ultimoDia !== dataItem.getDate()) {
+                        diaIndex++;
+                        ultimoDia = dataItem.getDate();
+                        diaAtualData = {
+                            dia: dataItem.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' }),
+                            temperaturas: [],
+                            chuva: 0,
+                            descricao: '',
+                            icone: ''
+                        };
+                        diasPrevistos.push(diaAtualData);
+                        if (diaIndex > dias) break;
+                    }
+                    diaAtualData.temperaturas.push(item.main.temp);
+                    if (item.rain && item.rain['3h']) {
+                        diaAtualData.chuva += item.rain['3h'];
+                    }
+                    if (!diaAtualData.descricao) {
+                        diaAtualData.descricao = item.weather[0].description;
+                        diaAtualData.icone = item.weather[0].icon;
+                    }
+                }
+
+                // Construir HTML da previsão resumida
+                let htmlPrevisao = '<div class="row">';
+                for (let i = 0; i < diasPrevistos.length; i++) {
+                    const d = diasPrevistos[i];
+                    const tempMin = Math.min(...d.temperaturas).toFixed(1);
+                    const tempMax = Math.max(...d.temperaturas).toFixed(1);
+                    const temChuva = d.chuva > 0;
+                    const destaque = destaqueChuva && temChuva ? 'border border-primary rounded p-2 bg-info text-white' : 'border rounded p-2';
+                    htmlPrevisao += `
+                    <div class="col-sm mb-2">
+                        <div class="${destaque}">
+                            <strong>${d.dia}</strong><br/>
+                            <img src="https://openweathermap.org/img/wn/${d.icone}@2x.png" alt="Ícone" style="width:50px;height:50px;" /><br/>
+                            <small>${d.descricao}</small><br/>
+                            <span>Min: ${tempMin} °C</span><br/>
+                            <span>Max: ${tempMax} °C</span><br/>
+                            ${temChuva ? `<span>Chuva: ${d.chuva.toFixed(1)} mm</span>` : ''}
+                        </div>
+                    </div>`;
+                }
+                htmlPrevisao += '</div>';
+
+                resultadoContainer.innerHTML = htmlPrevisao;
+            } catch (error) {
+                alert('Erro ao buscar previsão: ' + error.message);
+            }
+        }
+
+        // --- Evento dos botões do clima e filtros ---
+        function configurarEventosClima() {
+            // Botões de verificar clima
+            document.querySelectorAll('.verificar-clima-btn-veiculo').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tipo = btn.dataset.veiculoTipo;
+                    const inputCidade = document.getElementById(`cidade-previsao-input-${tipo}`);
+                    const cidade = inputCidade.value.trim();
+                    const diasSelecionadosBtn = document.querySelector(`.filtro-dias-btn.active[data-veiculo-tipo="${tipo}"]`);
+                    const dias = diasSelecionadosBtn ? Number(diasSelecionadosBtn.dataset.dias) : 5;
+                    const destaqueChuva = document.getElementById(`destaque-chuva-${tipo}`).checked;
+                    buscarPrevisaoTempo(tipo, cidade, dias, destaqueChuva);
+                });
+            });
+
+            // Filtros de dias
+            document.querySelectorAll('.filtro-dias-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tipo = btn.dataset.veiculoTipo;
+                    // Desativar todos do mesmo tipo
+                    document.querySelectorAll(`.filtro-dias-btn[data-veiculo-tipo="${tipo}"]`).forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    // Se já tem cidade, refazer busca
+                    const inputCidade = document.getElementById(`cidade-previsao-input-${tipo}`);
+                    if (inputCidade.value.trim() !== '') {
+                        document.getElementById(`verificar-clima-btn-${tipo}`).click();
+                    }
+                });
+            });
+
+            // Toggle destaque chuva
+            document.querySelectorAll('.toggle-destaque-chuva').forEach(toggle => {
+                toggle.addEventListener('change', () => {
+                    const tipo = toggle.dataset.veiculoTipo;
+                    const inputCidade = document.getElementById(`cidade-previsao-input-${tipo}`);
+                    if (inputCidade.value.trim() !== '') {
+                        document.getElementById(`verificar-clima-btn-${tipo}`).click();
+                    }
+                });
+            });
+        }
+
+        // --- Mostrar o veículo selecionado e esconder os outros ---
+        function mostrarVeiculo(tipo) {
+            document.querySelectorAll('.veiculo-container').forEach(div => div.style.display = 'none');
+            const cont = document.getElementById(`${tipo}-container`);
+            if (cont) {
+                cont.style.display = 'block';
+                document.getElementById('welcome-message').style.display = 'none';
+                document.getElementById('add-veiculo-form-container').style.display = 'none';
+                atualizarStatus(tipo);
+            }
+        }
+
+        // --- Adicionar veículo novo no menu lateral ---
+        function adicionarVeiculoMenu(tipo, nomeModelo) {
+            const menu = document.getElementById('sidebar-menu');
+            // Verifica se já existe item para esse tipo, remove para atualizar
+            const itemExistente = menu.querySelector(`li[data-veiculo-tipo="${tipo}"]`);
+            if (itemExistente) itemExistente.remove();
+            const li = document.createElement('li');
+            li.dataset.veiculoTipo = tipo;
+            li.className = 'sidebar-action';
+            li.innerHTML = `<a href="#" data-veiculo-tipo="${tipo}">${nomeModelo} (${tipo})</a>`;
+            // Inserir antes do "Adicionar Veículo"
+            const btnAdd = menu.querySelector('.sidebar-action:last-child');
+            menu.insertBefore(li, btnAdd);
+            // Adicionar evento ao link para mostrar o veículo
+            li.querySelector('a').addEventListener('click', (e) => {
+                e.preventDefault();
+                mostrarVeiculo(tipo);
+            });
+        }
+
+        // --- Atualizar dados do veículo (modelo, placa, cor, etc) ---
+        function atualizarDadosVeiculo(tipo, dados) {
+            if (!dados) return;
+            if (dados.modelo) document.getElementById(`${tipo}-modelo`).textContent = dados.modelo;
+            if (dados.placa !== undefined && document.getElementById(`${tipo}-placa`))
+                document.getElementById(`${tipo}-placa`).textContent = dados.placa || '---';
+            if (dados.cor) document.getElementById(`${tipo}-cor`).textContent = dados.cor;
+            if (tipo === 'caminhao' && dados.capacidade) {
+                veiculosEstado['caminhao'].capacidade = Number(dados.capacidade);
+                document.getElementById('caminhao-capacidade').textContent = dados.capacidade;
+            }
+        }
+
+        // --- Inicialização dos veículos com dados default (exemplo) ---
+        function inicializarVeiculos() {
+            atualizarDadosVeiculo('carro', { modelo: 'Fusca Azul', placa: 'ABC1234', cor: 'Azul' });
+            atualizarDadosVeiculo('esportivo', { modelo: 'Ferrari F8', placa: 'ESP2025', cor: 'Vermelho' });
+            atualizarDadosVeiculo('caminhao', { modelo: 'Scania R500', placa: 'CAM5000', cor: 'Branco', capacidade: 5000 });
+            atualizarDadosVeiculo('moto', { modelo: 'Honda CB 500', placa: 'MOTO500', cor: 'Preto' });
+            atualizarDadosVeiculo('bicicleta', { modelo: 'Caloi 10', cor: 'Verde' });
+            // Adiciona no menu os veículos
+            adicionarVeiculoMenu('carro', 'Fusca Azul');
+            adicionarVeiculoMenu('esportivo', 'Ferrari F8');
+            adicionarVeiculoMenu('caminhao', 'Scania R500');
+            adicionarVeiculoMenu('moto', 'Honda CB 500');
+            adicionarVeiculoMenu('bicicleta', 'Caloi 10');
+        }
+
+        // --- Eventos dos botões das ações dos veículos ---
+        function configurarEventosAcoes() {
+            document.querySelectorAll('.actions button').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tipo = btn.dataset.tipo;
+                    const acao = btn.dataset.acao;
+                    switch (acao) {
+                        case 'ligar': ligarVeiculo(tipo); break;
+                        case 'desligar': desligarVeiculo(tipo); break;
+                        case 'acelerar': acelerarVeiculo(tipo); break;
+                        case 'frear': frearVeiculo(tipo); break;
+                        case 'buzinar': buzinarVeiculo(tipo); break;
+                        case 'ativarTurbo': ativarTurboEsportivo(); break;
+                        case 'desativarTurbo': desativarTurboEsportivo(); break;
+                        case 'carregar': carregarCaminhao(); break;
+                        case 'descarregar': descarregarCaminhao(); break;
+                    }
+                });
+            });
+        }
+
+        // --- Eventos formulário adicionar veículo ---
+        function configurarFormAddVeiculo() {
+            const formAdd = document.getElementById('add-veiculo-form');
+            const tipoSelect = document.getElementById('add-tipo');
+            const capacidadeGroup = document.getElementById('add-caminhao-capacidade-group');
+
+            tipoSelect.addEventListener('change', () => {
+                if (tipoSelect.value === 'caminhao') {
+                    capacidadeGroup.style.display = 'block';
+                } else {
+                    capacidadeGroup.style.display = 'none';
+                }
+            });
+
+            formAdd.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const tipo = tipoSelect.value;
+                const modelo = document.getElementById('add-modelo').value.trim();
+                const placa = document.getElementById('add-placa').value.trim();
+                const cor = document.getElementById('add-cor').value.trim();
+                let capacidade = null;
+                if (tipo === 'caminhao') {
+                    capacidade = Number(document.getElementById('add-capacidade').value);
+                    if (!capacidade || capacidade <= 0) {
+                        alert('Informe uma capacidade válida para o caminhão.');
+                        return;
+                    }
+                }
+                // Atualizar dados e estado
+                atualizarDadosVeiculo(tipo, { modelo, placa, cor, capacidade });
+                // Adiciona no menu
+                adicionarVeiculoMenu(tipo, modelo);
+                mostrarMensagem(`Veículo ${modelo} adicionado.`);
+                mostrarVeiculo(tipo);
+                // Reset form e esconder
+                formAdd.reset();
+                capacidadeGroup.style.display = 'none';
+                document.getElementById('add-veiculo-form-container').style.display = 'none';
+            });
+        }
+
+        // --- Formulários de manutenção ---
+        function configurarFormulariosManutencao() {
+            document.querySelectorAll('.manutencao-form').forEach(form => {
+                form.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const tipo = form.dataset.tipo;
+                    const dataInput = form.querySelector(`#${tipo}-manutencao-data`);
+                    const tipoInput = form.querySelector(`#${tipo}-manutencao-tipo`);
+                    const custoInput = form.querySelector(`#${tipo}-manutencao-custo`);
+                    const descricaoInput = form.querySelector(`#${tipo}-manutencao-descricao`);
+                    const dataVal = dataInput.value;
+                    const tipoVal = tipoInput.value.trim();
+                    const custoVal = Number(custoInput.value);
+                    const descricaoVal = descricaoInput.value.trim();
+
+                    if (!dataVal || !tipoVal || isNaN(custoVal) || custoVal < 0) {
+                        alert('Preencha todos os campos obrigatórios corretamente.');
+                        return;
+                    }
+
+                    // Salvar manutenção no localStorage para persistência
+                    const chaveLS = `manutencao_${tipo}`;
+                    let manutencoes = JSON.parse(localStorage.getItem(chaveLS)) || [];
+
+                    manutencoes.push({
+                        data: dataVal,
+                        tipo: tipoVal,
+                        custo: custoVal,
+                        descricao: descricaoVal
+                    });
+
+                    localStorage.setItem(chaveLS, JSON.stringify(manutencoes));
+
+                    mostrarMensagem(`Manutenção adicionada para o ${tipo}.`);
+
+                    // Atualizar histórico e agendamentos
+                    atualizarHistoricoManutencao(tipo);
+                    form.reset();
+                });
+            });
+        }
+
+        // --- Atualizar histórico e agendamentos de manutenção ---
+        function atualizarHistoricoManutencao(tipo) {
+            const chaveLS = `manutencao_${tipo}`;
+            let manutencoes = JSON.parse(localStorage.getItem(chaveLS)) || [];
+            manutencoes.sort((a, b) => new Date(b.data) - new Date(a.data)); // mais recente primeiro
+
+            // Histórico: mostra todas as manutenções passadas (datas <= hoje)
+            const listaHistorico = document.getElementById(`${tipo}-historico-lista`);
+            listaHistorico.innerHTML = '';
+
+            const hoje = new Date();
+            const agendamentos = [];
+
+            for (const m of manutencoes) {
+                const dataManut = new Date(m.data);
+                const li = document.createElement('li');
+                li.textContent = `${dataManut.toLocaleString()} - ${m.tipo} - R$ ${m.custo.toFixed(2)} ${m.descricao ? '- ' + m.descricao : ''}`;
+                if (dataManut >= hoje) {
+                    agendamentos.push(li);
+                } else {
+                    listaHistorico.appendChild(li);
+                }
+            }
+
+            if (listaHistorico.children.length === 0) {
+                listaHistorico.innerHTML = '<li>Nenhum registro.</li>';
+            }
+
+            // Agendamentos: mostra os futuros
+            const listaAgendamentos = document.getElementById(`${tipo}-agendamentos-lista`);
+            listaAgendamentos.innerHTML = '';
+            if (agendamentos.length === 0) {
+                listaAgendamentos.innerHTML = '<li>Nenhum agendamento.</li>';
+            } else {
+                agendamentos.forEach(li => listaAgendamentos.appendChild(li));
+            }
+        }
+
+        // --- Inicialização da aplicação ---
+        document.addEventListener('DOMContentLoaded', () => {
+            inicializarVeiculos();
+            configurarEventosAcoes();
+            configurarEventosClima();
+            configurarFormAddVeiculo();
+            configurarFormulariosManutencao();
+            mostrarMensagem('Sistema iniciado. Selecione um veículo.');
+        });
+    </script>
 </body>
-
 </html>
