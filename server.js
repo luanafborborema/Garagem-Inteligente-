@@ -4,6 +4,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import Veiculo from './models/Veiculo.js'; // Esta linha agora está aqui!
 
 dotenv.config();
 
@@ -51,7 +52,46 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Rota exemplo da previsão do tempo
+// ENDPOINT para criar um novo veículo (POST)
+app.post('/api/veiculos', async (req, res) => {
+    try {
+        const novoVeiculoData = req.body;
+        // O Mongoose aplicará as validações do Schema aqui
+        const veiculoCriado = await Veiculo.create(novoVeiculoData);
+        
+        console.log('[Servidor] Veículo criado com sucesso:', veiculoCriado);
+        res.status(201).json(veiculoCriado); // Retorna o veículo criado com o _id do DB
+
+    } catch (error) {
+        console.error("[Servidor] Erro ao criar veículo:", error);
+        // Tratamento de erros de validação e duplicidade do Mongoose
+        if (error.code === 11000) { // Erro de placa duplicada (unique)
+            return res.status(409).json({ error: 'Veículo com esta placa já existe.' });
+        }
+        if (error.name === 'ValidationError') { // Erros de campos obrigatórios, min/max, etc.
+             const messages = Object.values(error.errors).map(val => val.message);
+             return res.status(400).json({ error: messages.join(' ') });
+        }
+        res.status(500).json({ error: 'Erro interno ao criar veículo.' });
+    }
+});
+
+// ENDPOINT para ler todos os veículos (GET)
+app.get('/api/veiculos', async (req, res) => {
+    try {
+        const todosOsVeiculos = await Veiculo.find(); // .find() sem argumentos busca todos
+        
+        console.log('[Servidor] Buscando todos os veículos do DB.');
+        res.json(todosOsVeiculos);
+
+    } catch (error) {
+        console.error("[Servidor] Erro ao buscar veículos:", error);
+        res.status(500).json({ error: 'Erro interno ao buscar veículos.' });
+    }
+});
+
+
+// Rota exemplo da previsão do tempo (EXISTENTE)
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 
 app.get('/api/previsao/:cidade', async (req, res) => {
@@ -91,7 +131,7 @@ app.get('/api/previsao/:cidade', async (req, res) => {
   }
 });
 
-// Dados mock
+// Dados mock (EXISTENTE)
 const veiculosDestaque = [
   { id: 1, modelo: "Tesla Cybertruck", ano: 2024, destaque: "Design Futurista, Elétrico e Potente", imagemUrl: "https://hips.hearstapps.com/hmg-prod/images/tesla-cybertruck-release-date-us-6415aa02e6d19.jpeg?crop=0.8888888888888888xw:1xh;center,top&resize=1200:*" },
   { id: 2, modelo: "Ford Maverick Híbrida", ano: 2023, destaque: "Picape compacta, híbrida e versátil", imagemUrl: "https://image.webmotors.com.br/_fotos/upload/clipping/2023/11/08/maior-picapes-mais-economicas-2023-wm.webp?teste" },
@@ -111,7 +151,7 @@ const ferramentasEssenciais = [
   { id: "F03", nome: "Chave de Impacto Elétrica", utilidade: "Facilita a remoção e aperto rápido de porcas de roda e outros fixadores pesados.", categoria: "Elétrica" }
 ];
 
-// Endpoints GET
+// Endpoints GET (EXISTENTE)
 
 app.get('/api/garagem/veiculos-destaque', (req, res) => {
   res.json(veiculosDestaque);
@@ -131,12 +171,12 @@ app.get('/api/garagem/ferramentas-essenciais/:idFerramenta', (req, res) => {
   }
 });
 
-// Rota raiz para teste
+// Rota raiz para teste (EXISTENTE)
 app.get('/', (req, res) => {
   res.send('Servidor da Garagem Inteligente Online!');
 });
 
-// Iniciar servidor
+// Iniciar servidor (EXISTENTE)
 app.listen(PORT, () => {
   console.log(`[BACKEND] Servidor rodando na porta ${PORT}`);
 });
