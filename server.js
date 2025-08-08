@@ -4,7 +4,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import Veiculo from './models/Veiculo.js'; // Esta linha agora está aqui!
+import Veiculo from './models/Veiculo.js';
 
 dotenv.config();
 
@@ -56,19 +56,17 @@ app.use(express.json());
 app.post('/api/veiculos', async (req, res) => {
     try {
         const novoVeiculoData = req.body;
-        // O Mongoose aplicará as validações do Schema aqui
         const veiculoCriado = await Veiculo.create(novoVeiculoData);
         
         console.log('[Servidor] Veículo criado com sucesso:', veiculoCriado);
-        res.status(201).json(veiculoCriado); // Retorna o veículo criado com o _id do DB
+        res.status(201).json(veiculoCriado);
 
     } catch (error) {
         console.error("[Servidor] Erro ao criar veículo:", error);
-        // Tratamento de erros de validação e duplicidade do Mongoose
-        if (error.code === 11000) { // Erro de placa duplicada (unique)
+        if (error.code === 11000) { 
             return res.status(409).json({ error: 'Veículo com esta placa já existe.' });
         }
-        if (error.name === 'ValidationError') { // Erros de campos obrigatórios, min/max, etc.
+        if (error.name === 'ValidationError') {
              const messages = Object.values(error.errors).map(val => val.message);
              return res.status(400).json({ error: messages.join(' ') });
         }
@@ -79,7 +77,7 @@ app.post('/api/veiculos', async (req, res) => {
 // ENDPOINT para ler todos os veículos (GET)
 app.get('/api/veiculos', async (req, res) => {
     try {
-        const todosOsVeiculos = await Veiculo.find(); // .find() sem argumentos busca todos
+        const todosOsVeiculos = await Veiculo.find();
         
         console.log('[Servidor] Buscando todos os veículos do DB.');
         res.json(todosOsVeiculos);
@@ -90,8 +88,62 @@ app.get('/api/veiculos', async (req, res) => {
     }
 });
 
+// ENDPOINT para atualizar um veículo por ID (PUT)
+app.put('/api/veiculos/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const dadosAtualizacao = req.body;
 
-// Rota exemplo da previsão do tempo (EXISTENTE)
+        const veiculoAtualizado = await Veiculo.findByIdAndUpdate(id, dadosAtualizacao, { new: true, runValidators: true });
+
+        if (!veiculoAtualizado) {
+            return res.status(404).json({ error: 'Veículo não encontrado para atualização.' });
+        }
+        
+        console.log('[Servidor] Veículo atualizado com sucesso:', veiculoAtualizado);
+        res.json(veiculoAtualizado);
+
+    } catch (error) {
+        console.error("[Servidor] Erro ao atualizar veículo:", error);
+        if (error.code === 11000) { 
+            return res.status(409).json({ error: 'Erro de duplicidade: Veículo com esta placa já existe.' });
+        }
+        if (error.name === 'ValidationError') { 
+             const messages = Object.values(error.errors).map(val => val.message);
+             return res.status(400).json({ error: messages.join(' ') });
+        }
+        if (error.name === 'CastError' && error.path === '_id') {
+            return res.status(400).json({ error: 'ID de veículo inválido.' });
+        }
+        res.status(500).json({ error: 'Erro interno ao atualizar veículo.' });
+    }
+});
+
+// ENDPOINT para deletar um veículo por ID (DELETE)
+app.delete('/api/veiculos/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const veiculoDeletado = await Veiculo.findByIdAndDelete(id);
+
+        if (!veiculoDeletado) {
+            return res.status(404).json({ error: 'Veículo não encontrado para remoção.' });
+        }
+        
+        console.log('[Servidor] Veículo removido com sucesso:', veiculoDeletado);
+        res.status(200).json({ message: 'Veículo removido com sucesso.', veiculo: veiculoDeletado });
+
+    } catch (error) {
+        console.error("[Servidor] Erro ao deletar veículo:", error);
+        if (error.name === 'CastError' && error.path === '_id') {
+            return res.status(400).json({ error: 'ID de veículo inválido.' });
+        }
+        res.status(500).json({ error: 'Erro interno ao deletar veículo.' });
+    }
+});
+
+
+// Rota exemplo da previsão do tempo (MANTIDA)
 const OPENWEATHER_API_KEY = process.env.OPENWEATHER_API_KEY;
 
 app.get('/api/previsao/:cidade', async (req, res) => {
@@ -131,7 +183,7 @@ app.get('/api/previsao/:cidade', async (req, res) => {
   }
 });
 
-// Dados mock (EXISTENTE)
+// Dados mock (MANTIDOS)
 const veiculosDestaque = [
   { id: 1, modelo: "Tesla Cybertruck", ano: 2024, destaque: "Design Futurista, Elétrico e Potente", imagemUrl: "https://hips.hearstapps.com/hmg-prod/images/tesla-cybertruck-release-date-us-6415aa02e6d19.jpeg?crop=0.8888888888888888xw:1xh;center,top&resize=1200:*" },
   { id: 2, modelo: "Ford Maverick Híbrida", ano: 2023, destaque: "Picape compacta, híbrida e versátil", imagemUrl: "https://image.webmotors.com.br/_fotos/upload/clipping/2023/11/08/maior-picapes-mais-economicas-2023-wm.webp?teste" },
@@ -151,7 +203,7 @@ const ferramentasEssenciais = [
   { id: "F03", nome: "Chave de Impacto Elétrica", utilidade: "Facilita a remoção e aperto rápido de porcas de roda e outros fixadores pesados.", categoria: "Elétrica" }
 ];
 
-// Endpoints GET (EXISTENTE)
+// Endpoints GET (MANTIDOS)
 
 app.get('/api/garagem/veiculos-destaque', (req, res) => {
   res.json(veiculosDestaque);
@@ -171,12 +223,12 @@ app.get('/api/garagem/ferramentas-essenciais/:idFerramenta', (req, res) => {
   }
 });
 
-// Rota raiz para teste (EXISTENTE)
+// Rota raiz para teste (MANTIDA)
 app.get('/', (req, res) => {
   res.send('Servidor da Garagem Inteligente Online!');
 });
 
-// Iniciar servidor (EXISTENTE)
+// Iniciar servidor (MANTIDO)
 app.listen(PORT, () => {
   console.log(`[BACKEND] Servidor rodando na porta ${PORT}`);
 });
