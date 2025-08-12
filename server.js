@@ -5,8 +5,14 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import Veiculo from './models/Veiculo.js';
+import path from 'path'; // <--- NOVIDADE: Importa o módulo path
+import { fileURLToPath } from 'url'; // <--- NOVIDADE: Importa fileURLToPath
 
 dotenv.config();
+
+// Para resolver o __dirname em módulos ES6
+const __filename = fileURLToPath(import.meta.url); // <--- NOVIDADE
+const __dirname = path.dirname(__filename); // <--- NOVIDADE
 
 const mongoUriCrud = process.env.MONGO_URI_CRUD;
 
@@ -51,6 +57,15 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// NOVIDADE IMPORTANTE: Serve arquivos estáticos da pasta 'frontend'.
+// Isso significa que qualquer requisição para '/imagens/tesla.jpeg' ou '/style.css'
+// será direcionada para a pasta 'frontend' do seu projeto.
+app.use(express.static(path.join(__dirname, '../frontend'))); // <--- Caminho corrigido para a pasta frontend
+
+// O caminho `path.join(__dirname, '../frontend')` assume que o `server.js`
+// está dentro da pasta `backend` e que a pasta `frontend` está um nível acima
+// (irmã da pasta `backend`). Se a sua estrutura for diferente, me avise.
 
 // ENDPOINT para criar um novo veículo (POST)
 app.post('/api/veiculos', async (req, res) => {
@@ -185,10 +200,10 @@ app.get('/api/previsao/:cidade', async (req, res) => {
 
 // Dados mock (MANTIDOS)
 const veiculosDestaque = [
-  { id: 1, modelo: "Tesla Cybertruck", ano: 2024, destaque: "Design Futurista, Elétrico e Potente", imagemUrl: "https://hips.hearstapps.com/hmg-prod/images/tesla-cybertruck-release-date-us-6415aa02e6d19.jpeg?crop=0.8888888888888888xw:1xh;center,top&resize=1200:*" },
-  { id: 2, modelo: "Ford Maverick Híbrida", ano: 2023, destaque: "Picape compacta, híbrida e versátil", imagemUrl: "https://image.webmotors.com.br/_fotos/upload/clipping/2023/11/08/maior-picapes-mais-economicas-2023-wm.webp?teste" },
-  { id: 3, modelo: "Porsche Taycan", ano: 2022, destaque: "Esportivo elétrico de alta performance", imagemUrl: "https://hips.hearstapps.com/hmg-prod/images/15porsche-taycan-cross-turismo-front-top-studio-010-1678121345.jpg?crop=0.627xw:1xh;center,top&resize=1200:*" },
-  { id: 4, modelo: "Honda Civic Type R", ano: 2024, destaque: "Carro esportivo de alto desempenho", imagemUrl: "https://cdn.motor1.com/images/mgl/Lp9P90/s3/2023-honda-civic-type-r-front-angle-track-uk-press-cars-1-2023.jpg" }
+  { id: 1, modelo: "Tesla Cybertruck", ano: 2024, destaque: "Design Futurista, Elétrico e Potente", imagemUrl: "imagens/tesla.jpeg" },
+  { id: 2, modelo: "Ford Maverick Híbrida", ano: 2023, destaque: "Picape compacta, híbrida e versátil", imagemUrl: "imagens/maverick.jpeg" },
+  { id: 3, modelo: "Porsche Taycan", ano: 2022, destaque: "Esportivo elétrico de alta performance", imagemUrl: "imagens/porsche.jpeg" },
+  { id: 4, modelo: "Honda Civic Type R", ano: 2024, destaque: "Carro esportivo de alto desempenho", imagemUrl: "imagens/civic.jpeg" }
 ];
 
 const servicosGaragem = [
