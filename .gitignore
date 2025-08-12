@@ -1,0 +1,28 @@
+# ginteligente/.gitignore
+# CONTEÚDO COMPLETO DO ARQUIVO: SUBSTITUA TUDO QUE JÁ EXISTE POR ISTO.
+
+# Regras para ignorar arquivos e pastas no controle de versão Git.
+# Isso impede que arquivos desnecessários (como dependências, chaves secretas)
+# sejam enviados para o GitHub, mantendo seu repositório limpo e seguro.
+
+# Pasta principal para as dependências do Node.js (geradas por npm install ou yarn)
+node_modules/
+# A pasta node_modules dentro do seu backend também deve ser ignorada.
+backend/node_modules/
+
+# Arquivos de configuração de ambiente (muito importantes para segurança).
+# Eles contêm chaves de API e outras informações sensíveis que NUNCA devem ser públicas.
+.env             # Ignora o arquivo .env se estiver na raiz do projeto
+backend/.env     # Ignora o arquivo .env se estiver dentro da pasta do backend
+
+# Outros arquivos temporários, de log ou de sistema que não são parte do código fonte
+.DS_Store        # Arquivos de metadados do sistema operacional macOS
+*.log            # Qualquer arquivo com a extensão .log (arquivos de registro de eventos/erros)
+npm-debug.log*   # Logs de depuração do npm
+yarn-error.log   # Logs de erro do Yarn (outro gerenciador de pacotes JS)
+
+# Ignora diretórios comuns de saída de build ou temporários, se o projeto for compilado ou empacotado.
+# (No seu projeto atual pode não ter, mas são boas práticas para manter no .gitignore)
+build/           # Pasta de build de projetos
+dist/            # Pasta de distribuição (builds de produção)
+tmp/             # Pasta de arquivos temporários

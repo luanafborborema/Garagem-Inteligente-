@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<title>Teste Previsão do Tempo</title>
+</head>
+<body>
+
+<h2>Teste Previsão do Tempo</h2>
+
+<input type="text" id="cidade-previsao-input-bicicleta" placeholder="Digite a cidade" />
+<button id="verificar-clima-btn-bicicleta">Verificar Clima</button>
+
+<div id="previsao-tempo-resultado-bicicleta"></div>
+
+<script>
+const backendUrl = "https://garagem-inteligente.onrender.com";
+
+const botaoVerificarClima = document.getElementById("verificar-clima-btn-bicicleta");
+const inputCidadePrevisao = document.getElementById("cidade-previsao-input-bicicleta");
+const divResultadoPrevisao = document.getElementById("previsao-tempo-resultado-bicicleta");
+
+botaoVerificarClima.addEventListener("click", async () => {
+    const cidade = inputCidadePrevisao.value.trim();
+    divResultadoPrevisao.innerHTML = "<p>Carregando previsão do tempo...</p>";
+    if (!cidade) {
+        divResultadoPrevisao.innerHTML = '<p style="color:red;">Por favor, digite o nome de uma cidade.</p>';
+        return;
+    }
+    try {
+        const urlParaChamarBackend = `${backendUrl}/api/previsao/${cidade}`;
+        const responseDoBackend = await fetch(urlParaChamarBackend);
+        if (!responseDoBackend.ok) {
+            const errorDataDoBackend = await responseDoBackend.json();
+            const errorMessageParaUI = errorDataDoBackend.error || `Erro ao obter previsão (Status: ${responseDoBackend.status}).`;
+            throw new Error(errorMessageParaUI);
+        }
+        const dados = await responseDoBackend.json();
+        divResultadoPrevisao.innerHTML = `
+          <h5>Previsão para ${dados.nomeCidade}, ${dados.pais}</h5>
+          <p>${dados.descricaoClima}</p>
+          <img src="https://openweathermap.org/img/wn/${dados.iconeClima}@2x.png" alt="${dados.descricaoClima}">
+          <p>Temperatura: ${dados.temperaturaAtual}°C (Sensação: ${dados.sensacaoTermica}°C)</p>
+          <p>Máx: ${dados.temperaturaMax}°C / Mín: ${dados.temperaturaMin}°C</p>
+          <p>Vento: ${dados.velocidadeVento} m/s</p>
+        `;
+    } catch (error) {
+        divResultadoPrevisao.innerHTML = `<p style="color:red;">Erro: ${error.message}</p>`;
+    }
+});
+</script>
+
+</body>
+</html>
