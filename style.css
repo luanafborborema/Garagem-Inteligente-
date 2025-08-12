@@ -1,0 +1,199 @@
+/* Reset básico e fonte */
+html { box-sizing: border-box; }
+*, *:before, *:after { box-sizing: inherit; }
+body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; line-height: 1.6; margin: 0; background-color: #f8f9fa; color: #212529; display: flex; flex-direction: column; min-height: 100vh; }
+
+/* Container principal */
+#app-container { display: flex; flex-grow: 1; width: 100%; }
+
+/* Barra Lateral */
+#sidebar { width: 230px; background-color: #343a40; color: #dee2e6; padding: 20px 15px; height: 100vh; position: fixed; left: 0; top: 0; overflow-y: auto; box-shadow: 2px 0 5px rgba(0,0,0,0.1); z-index: 1000; }
+#sidebar h2 { text-align: center; margin-bottom: 30px; color: #f8f9fa; font-size: 1.6em; font-weight: 300; }
+#sidebar-menu { list-style: none; padding: 0; margin: 0; }
+#sidebar-menu li { margin-bottom: 2px; /* Menos espaço entre itens */ }
+#sidebar-menu li.veiculo-item a { color: #adb5bd; /* Cor padrão para veículos */ }
+#sidebar-menu li.sidebar-action a { color: #17a2b8; /* Cor diferente para ações */ font-weight: 500; }
+#sidebar-menu a { display: block; text-decoration: none; padding: 10px 18px; /* Ajuste padding */ border-radius: 5px; transition: background-color 0.2s ease, color 0.2s ease; font-size: 0.95em; }
+#sidebar-menu a:hover { background-color: #495057; color: #fff; }
+#sidebar-menu a.active { background-color: #007bff; color: #fff; font-weight: 500; }
+#sidebar-menu li.sidebar-action a:hover { background-color: #138496; color: #fff;}
+
+/* Área de Conteúdo Principal */
+#main-content { flex-grow: 1; padding: 35px; margin-left: 230px; background-color: #ffffff; position: relative; /* Para posicionar feedback */ }
+
+/* --- Área de Feedback --- */
+.feedback {
+    padding: 15px 20px;
+    margin-bottom: 25px;
+    border-radius: 6px;
+    font-size: 0.95em;
+    font-weight: 500;
+    display: none; /* Começa escondido */
+    border: 1px solid transparent;
+    position: sticky; /* Fica preso no topo ao rolar */
+    top: 15px;      /* Espaço do topo */
+    z-index: 1001; /* Acima de outros conteúdos */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.feedback.success { background-color: #d4edda; color: #155724; border-color: #c3e6cb; display: block;}
+.feedback.error { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; display: block;}
+.feedback.warning { background-color: #fff3cd; color: #856404; border-color: #ffeeba; display: block;}
+.feedback.info { background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; display: block;}
+
+
+/* Mensagem de Boas-vindas */
+#welcome-message { display: block; text-align: center; color: #6c757d; margin: 40px auto; padding: 30px; background-color: #e9ecef; border-radius: 8px; max-width: 600px; border: 1px solid #dee2e6; }
+#welcome-message h1 { margin-top: 0; margin-bottom: 15px; color: #495057; font-weight: 400; }
+#main-content.content-visible #welcome-message { display: none; } /* Esconde welcome quando outro conteúdo aparece */
+
+/* --- Formulário de Adição --- */
+.form-container {
+    display: none; /* Escondido por padrão */
+    border: 1px solid #dee2e6; padding: 25px 30px; margin-top: 0; border-radius: 8px; background-color: #fff; box-shadow: 0 3px 8px rgba(0,0,0,0.05); margin-bottom: 30px; max-width: 600px; /* Limita largura */ margin-left: auto; margin-right: auto; /* Centraliza */
+}
+.form-container.active { display: block; } /* Mostra o form */
+.form-container h2 { text-align: center; color: #0056b3; margin-top: 0; margin-bottom: 25px; padding-bottom: 12px; border-bottom: 1px solid #e9ecef; font-weight: 500; }
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; margin-bottom: 6px; color: #495057; font-weight: 500; font-size: 0.9em; }
+.form-group input[type="text"], .form-group input[type="number"], .form-group select { width: 100%; padding: 10px 12px; border: 1px solid #ced4da; border-radius: 4px; font-size: 1em; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.form-group input:focus, .form-group select:focus { border-color: #80bdff; outline: 0; box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); }
+.form-container button { padding: 10px 20px; font-size: 1em; border-radius: 5px; cursor: pointer; transition: background-color 0.2s ease; border: none; margin-top: 10px; margin-right: 10px; }
+.form-container button[type="submit"] { background-color: #28a745; color: white; }
+.form-container button[type="submit"]:hover { background-color: #218838; }
+.form-container button[type="button"] { background-color: #6c757d; color: white; }
+.form-container button[type="button"]:hover { background-color: #5a6268; }
+
+
+/* Containers de veículo */
+/*.veiculo-container { display: none; */
+.veiculo-container.active { display: block; }
+.veiculo-container h2 { text-align: left; color: #0056b3; margin-top: 0; margin-bottom: 25px; padding-bottom: 12px; border-bottom: 1px solid #e9ecef; font-weight: 500; }
+.veiculo-img { display: block; margin: 0 auto 25px auto; max-width: 200px; border-radius: 5px; transition: transform 0.15s ease-in-out; }
+.veiculo-container p { margin: 10px 0; color: #495057; font-size: 1em; }
+.veiculo-container p strong { color: #212529; min-width: 80px; display: inline-block; }
+
+/* Seção de Ações */
+.actions { margin-top: 20px; border-top: 1px dashed #e9ecef; padding-top: 20px; text-align: center; }
+.actions button, .actions input[type="number"], .actions label { margin: 6px; padding: 9px 14px; cursor: pointer; border-radius: 4px; border: 1px solid #ced4da; vertical-align: middle; font-size: 0.9em; }
+.actions button { background-color: #17a2b8; color: white; border-color: #17a2b8; transition: background-color 0.2s ease, border-color 0.2s ease; }
+.actions button:hover { background-color: #138496; border-color: #117a8b; }
+.actions button:disabled { background-color: #e9ecef; border-color: #dee2e6; color: #6c757d; cursor: not-allowed; opacity: 0.7; } /* Estilo para botão desabilitado */
+.actions button[data-acao="ligar"] { background-color: #28a745; border-color: #28a745;} .actions button[data-acao="ligar"]:hover:enabled { background-color: #218838; border-color: #1e7e34;}
+.actions button[data-acao="desligar"] { background-color: #dc3545; border-color: #dc3545;} .actions button[data-acao="desligar"]:hover:enabled { background-color: #c82333; border-color: #bd2130;}
+.actions button[data-acao="ativarTurbo"] { background-color: #ffc107; color: #212529; border-color: #ffc107;} .actions button[data-acao="ativarTurbo"]:hover:enabled { background-color: #e0a800; border-color: #d39e00;}
+.actions input[type="number"] { width: 90px; }
+
+/* Estilos status */
+.status-ligado { color: #28a745; font-weight: bold; } .status-desligado { color: #dc3545; font-weight: bold; } .status-parada { color: #6c757d; font-weight: bold;}
+/* Animações */
+.veiculo-img.acelerando { transform: scale(1.03) translateX(4px); } .veiculo-img.freando { transform: scale(0.97) translateX(-2px); }
+
+/* Seção Manutenção */
+.manutencao-section { border-top: 1px solid #e9ecef; margin-top: 30px; padding-top: 25px; }
+.manutencao-section h4 { margin-bottom: 20px; color: #495057; text-align: center; font-size: 1.3em; font-weight: 400; }
+.manutencao-form { margin-bottom: 25px; padding: 20px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; }
+.manutencao-form h5 { margin-top: 0; margin-bottom: 15px; color: #6c757d; font-weight: 500;}
+.manutencao-form input, .manutencao-form textarea { display: block; width: 100%; padding: 10px 12px; margin-bottom: 12px; border: 1px solid #ced4da; border-radius: 4px; font-size: 0.95em; }
+.manutencao-form textarea { min-height: 70px; resize: vertical; }
+.manutencao-form button { padding: 10px 18px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s ease; font-size: 0.95em; display: block; margin: 15px auto 0 auto; width: auto; }
+.manutencao-form button:hover { background-color: #218838; }
+.manutencao-display { margin-bottom: 20px; }
+.manutencao-display h5 { margin-bottom: 10px; color: #6c757d; font-size: 1.1em; font-weight: 500; border-bottom: 1px solid #eee; padding-bottom: 5px;}
+.manutencao-display ul { list-style: none; padding-left: 0; margin-top: 0; max-height: 180px; overflow-y: auto; border: 1px solid #e9ecef; padding: 15px; background-color: #fff; border-radius: 4px; }
+.manutencao-display ul li { padding: 8px 5px; font-size: 0.9em; color: #495057; border-bottom: 1px dashed #e9ecef; }
+.manutencao-display ul li:empty { display: none; } .manutencao-display ul li:last-child { border-bottom: none; }
+/* ... (seu CSS existente aqui) ... */
+
+/* Rodapé */
+footer { background-color: #e9ecef; color: #6c757d; text-align: center; padding: 15px 0; margin-top: auto; border-top: 1px solid #dee2e6; width: 100%; font-size: 0.85em; }
+footer p { margin: 0; }
+
+/* Esconder elementos de áudio */
+audio { display: none; }
+
+
+.api-details-section { /* Classe reutilizada para a seção de previsão */
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+.previsao-tempo-resultado {
+    margin-top: 10px;
+    border: 1px dashed #ccc;
+    padding: 10px;
+    min-height: 100px;
+    background-color: #f9f9f9;
+}
+.previsao-tempo-resultado ul { list-style: none; padding-left: 0; }
+.previsao-tempo-resultado li { margin-bottom: 5px; }
+
+/* Estilos para a previsão de 5 dias */
+.previsao-dias-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-around; /* Ou space-between, flex-start */
+    margin-top: 10px; /* Espaço acima dos cards de dia */
+}
+.dia-previsao {
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #fff;
+    text-align: center;
+    min-width: 110px; /* Ajuste conforme necessário */
+    flex-basis: 140px; /* Ajuste conforme necessário */
+    flex-grow: 1;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: background-color 0.3s ease, border-left 0.3s ease; /* Para transições suaves no destaque */
+}
+.dia-previsao img {
+    width: 50px;
+    height: 50px;
+    background-color: #e0f7fa;
+    border-radius: 50%;
+    margin-bottom: 5px;
+}
+.dia-previsao h6 { margin: 5px 0; font-size: 0.9em; color: #333; }
+.dia-previsao p { margin: 3px 0; font-size: 0.85em; }
+.temperaturas { font-weight: bold; }
+.temp-max { color: #e53935; }
+.temp-min { color: #1e88e5; }
+.descricao-tempo { font-size: 0.8em; color: #555; }
+
+/* Filtros e Destaques */
+.filtros-previsao {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap; /* Para quebrar linha em telas menores */
+}
+.filtros-previsao button.active {
+    background-color: #0d6efd; /* Cor primária do Bootstrap */
+    color: white;
+    border-color: #0d6efd;
+}
+
+/* Estilo para o toggle switch do Bootstrap (se estiver usando) */
+.form-switch .form-check-input {
+    cursor: pointer;
+}
+
+/* Destaque para dias com chuva */
+.dia-previsao.dia-chuvoso {
+    background-color: #e3f2fd; /* Um azul claro para chuva */
+    border-left: 5px solid #2196f3; /* Borda azul mais forte */
+}
+
+.dia-previsao.dia-chuvoso .descricao-tempo::after {
+    content: " 💧"; /* Adiciona um emoji de gota */
+    font-size: 0.9em;
+}
+
+/* Feedback de carregamento na área da previsão */
+.previsao-tempo-resultado .text-info,
+.previsao-tempo-resultado .text-warning,
+.previsao-tempo-resultado .text-danger,
+.previsao-tempo-resultado .text-muted {
+    padding: 10px;
+    text-align: center;
+}
